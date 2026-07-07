@@ -6,7 +6,7 @@ let globalBase64Data = "";
 // Replace the placeholder link below with your actual Google Web App URL.
 // Ensure your link retains the quotes around it, ending with "/exec".
 // =========================================================================
-const GOOGLE_SCRIPT_URL = "17yX06W7LCJ39WmxvVpvwi3CmzroCSnbz/exec";
+const GOOGLE_SCRIPT_URL = "17yX06W7LCJ39WmxvVpvwi3CmzroCSnbz";
 
 
 const imageInput = document.getElementById('imageInput');
