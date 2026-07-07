@@ -5,4 +5,88 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Magnet Studio | Perfect 2x2" Prints</title>
   <!-- Tailwind CSS & Fonts -->
-  <script src="
+  <script src="https://tailwindcss.com"></script>
+  <link rel="preconnect" href="https://googleapis.com">
+  <link rel="preconnect" href="https://gstatic.com" crossorigin>
+  <link href="https://googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Cropper.js Mobile Engine -->
+  <link rel="stylesheet" href="https://cloudflare.com">
+  <script src="https://cloudflare.com"></script>
+  
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .cropper-view-box, .cropper-face { border-radius: 8px; }
+    .cropper-line, .cropper-point { background-color: #6366f1; }
+  </style>
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col items-center justify-between p-4 antialiased selection:bg-indigo-500 selection:text-white">
+
+  <!-- Elegant Brand Header -->
+  <header class="text-center my-6">
+    <div class="inline-flex items-center gap-2 px-3 py-1 bg-indigo-50 border border-indigo-100 rounded-full text-indigo-700 text-xs font-semibold tracking-wide uppercase mb-2">
+      ⚡ Print Optimizer
+    </div>
+    <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">Magnet Studio</h1>
+    <p class="text-sm text-slate-500 mt-1 max-w-xs mx-auto">Upload and crop your photo into a flawless, high-resolution 2" × 2" print layout.</p>
+  </header>
+
+  <!-- Premium Glassmorphism Card Workspace -->
+  <main class="w-full max-w-md bg-white rounded-3xl border border-slate-100 shadow-[0_20px_50px_rgba(0,0,0,0.04)] overflow-hidden p-6 flex flex-col items-center justify-center flex-grow mb-6 transition-all duration-300">
+    
+    <!-- Upload Screen -->
+    <div id="uploadScreen" class="w-full flex flex-col items-center justify-center border-2 border-dashed border-slate-200 hover:border-indigo-400 rounded-2xl p-10 bg-slate-50/50 cursor-pointer transition-all duration-300 group">
+      <label class="w-full text-center cursor-pointer">
+        <div class="mx-auto h-16 w-16 bg-white rounded-2xl shadow-sm flex items-center justify-center border border-slate-100 group-hover:scale-105 group-hover:shadow-md transition-all duration-300">
+          <svg class="h-7 w-7 text-indigo-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+          </svg>
+        </div>
+        <span class="mt-5 block text-base font-semibold text-slate-800">Choose or Snap a Photo</span>
+        <span class="mt-1 block text-xs text-slate-400">Supports standard mobile camera uploads</span>
+        <input type="file" id="imageInput" accept="image/*" class="hidden">
+      </label>
+    </div>
+
+    <!-- Crop Screen -->
+    <div id="cropScreen" class="w-full hidden flex flex-col items-center">
+      <div class="w-full aspect-square bg-slate-900 rounded-2xl overflow-hidden shadow-inner max-h-[70vw] sm:max-h-[380px] border border-slate-800">
+        <img id="imageToCrop" class="max-w-full block">
+      </div>
+      <div class="flex items-center gap-1.5 text-xs font-medium text-slate-400 mt-4 bg-slate-100 px-3 py-1.5 rounded-full">
+        Drag to position • Pinch to resize
+      </div>
+    </div>
+
+    <!-- Success Screen -->
+    <div id="successScreen" class="w-full hidden flex flex-col items-center text-center py-4">
+      <div class="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center border border-emerald-100 mb-4 animate-bounce">
+        <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+      </div>
+      <h2 class="text-xl font-bold text-slate-900">Photo Perfected!</h2>
+      <p class="text-sm text-slate-500 mb-6 max-w-xs">Your image has been permanently locked into a high-density 600 × 600px square format.</p>
+      
+      <!-- FORM STAGING AREA -->
+      <form id="photoForm" action="https://formspree.io" method="POST" enctype="multipart/form-data" class="w-full">
+        <input type="file" id="hiddenFileInput" name="magnet_photo" class="hidden">
+        <button type="submit" id="uploadSubmitBtn" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-4 px-6 rounded-2xl shadow-xl shadow-slate-900/10 hover:shadow-slate-900/20 transition-all duration-200">
+          Upload Photo to Admin
+        </button>
+      </form>
+
+      <button id="resetBtn" class="text-sm text-slate-400 hover:text-indigo-600 font-semibold mt-5 transition-colors duration-200">
+        ← Start Over
+      </button>
+    </div>
+
+  </main>
+
+  <!-- Sticky Bottom Processing Banner -->
+  <footer class="w-full max-w-md mb-6">
+    <button id="cropBtn" class="w-full hidden bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-4 px-6 rounded-2xl shadow-xl shadow-indigo-600/20 transition-all duration-200 text-center">
+      Lock Layout & Crop Image
+    </button>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
