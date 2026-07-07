@@ -66,19 +66,25 @@
       <p class="text-sm text-slate-500 mb-6 max-w-xs">Your image has been permanently locked into a high-density 600 × 600px square format.</p>
       
       <!-- FORM STAGING AREA -->
-      <form id="photoForm" action="https://formspree.io" method="POST" enctype="multipart/form-data" class="w-full">
-        <input type="file" id="hiddenFileInput" name="magnet_photo" class="hidden">
-        <button type="submit" id="uploadSubmitBtn" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-4 px-6 rounded-2xl shadow-xl shadow-slate-900/10 hover:shadow-slate-900/20 transition-all duration-200">
-          Upload Photo to Admin
-        </button>
-      </form>
+          <!-- Success Screen (Direct Google Drive Submission Layout) -->
+    <div id="successScreen" class="w-full hidden flex flex-col items-center text-center py-4">
+      <div class="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center border border-emerald-100 mb-4 animate-bounce">
+        <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+      </div>
+      <h2 class="text-xl font-bold text-slate-900">Photo Perfected!</h2>
+      <p class="text-sm text-slate-500 mb-6 max-w-xs">Your image has been permanently locked into a high-density 600 × 600px square format.</p>
+      
+      <!-- DIRECT SUBMIT BUTTON -->
+      <button id="uploadSubmitBtn" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-4 px-6 rounded-2xl shadow-xl shadow-slate-900/10 hover:shadow-slate-900/20 transition-all duration-200">
+        Upload Photo to 
+
+Google Drive
+      </button>
 
       <button id="resetBtn" class="text-sm text-slate-400 hover:text-indigo-600 font-semibold mt-5 transition-colors duration-200">
         ← Start Over
       </button>
     </div>
-
-  </main>
 
   <!-- Sticky Bottom Processing Banner -->
   <footer class="w-full max-w-md mb-6">
