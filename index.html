@@ -30,7 +30,7 @@
     <p class="text-sm text-slate-500 mt-1 max-w-xs mx-auto">Upload and crop your photo into a flawless, high-resolution 2" × 2" print layout.</p>
   </header>
 
-  <!-- Premium Glassmorphism Card Workspace -->
+  <!-- Premium Card Workspace -->
   <main class="w-full max-w-md bg-white rounded-3xl border border-slate-100 shadow-[0_20px_50px_rgba(0,0,0,0.04)] overflow-hidden p-6 flex flex-col items-center justify-center flex-grow mb-6 transition-all duration-300">
     
     <!-- Upload Screen -->
@@ -57,18 +57,9 @@
       </div>
     </div>
 
-    <!-- Success Screen -->
+    <!-- Success Screen (Single Correct Layout) -->
     <div id="successScreen" class="w-full hidden flex flex-col items-center text-center py-4">
-      <div class="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center border border-emerald-100 mb-4 animate-bounce">
-        <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
-      </div>
-      <h2 class="text-xl font-bold text-slate-900">Photo Perfected!</h2>
-      <p class="text-sm text-slate-500 mb-6 max-w-xs">Your image has been permanently locked into a high-density 600 × 600px square format.</p>
-      
-      <!-- FORM STAGING AREA -->
-          <!-- Success Screen (Direct Google Drive Submission Layout) -->
-    <div id="successScreen" class="w-full hidden flex flex-col items-center text-center py-4">
-      <div class="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center border border-emerald-100 mb-4 animate-bounce">
+      <div class="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center border border-emerald-100 mb-4">
         <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
       </div>
       <h2 class="text-xl font-bold text-slate-900">Photo Perfected!</h2>
@@ -76,15 +67,15 @@
       
       <!-- DIRECT SUBMIT BUTTON -->
       <button id="uploadSubmitBtn" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-4 px-6 rounded-2xl shadow-xl shadow-slate-900/10 hover:shadow-slate-900/20 transition-all duration-200">
-        Upload Photo to 
-
-Google Drive
+        Upload Photo to Google Drive
       </button>
 
       <button id="resetBtn" class="text-sm text-slate-400 hover:text-indigo-600 font-semibold mt-5 transition-colors duration-200">
         ← Start Over
       </button>
     </div>
+
+  </main>
 
   <!-- Sticky Bottom Processing Banner -->
   <footer class="w-full max-w-md mb-6">
