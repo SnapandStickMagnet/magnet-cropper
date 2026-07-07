@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2x2 Magnet Photo Cropper</title>
+  <!-- Tailwind CSS for clean mobile styling -->
+  <script src="https://tailwindcss.com"></script>
+  <!-- Cropper.js for mobile-touch cropping -->
+  <link rel="stylesheet" href="https://cloudflare.com">
+  <script src="https://cloudflare.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center justify-between p-4 font-sans selection:bg-indigo-500">
+
+  <!-- Header -->
+  <header class="text-center my-4">
+    <h1 class="text-2xl font-bold text-gray-800">2" x 2" Magnet Cropper</h1>
+    <p class="text-xs text-gray-500 mt-1">Upload and crop your photo perfectly for printing</p>
+  </header>
+
+  <!-- Main Workspace -->
+  <main class="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden p-6 flex flex-col items-center justify-center flex-grow mb-4">
+    
+    <!-- Upload Screen (Shown initially) -->
+    <div id="uploadScreen" class="w-full flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl p-8 bg-gray-50 cursor-pointer hover:bg-gray-100 transition">
+      <label class="w-full text-center cursor-pointer">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 002-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+        </svg>
+        <span class="mt-4 block text-sm font-medium text-gray-600">Tap to Choose or Take a Photo</span>
+        <input type="file" id="imageInput" accept="image/*" class="hidden">
+      </label>
+    </div>
+
+    <!-- Crop Screen (Hidden until photo uploaded) -->
+    <div id="cropScreen" class="w-full hidden flex flex-col items-center">
+      <div class="w-full aspect-square bg-black rounded-lg overflow-hidden max-h-[65vw] sm:max-h-[400px]">
+        <img id="imageToCrop" class="max-w-full block">
+      </div>
+      <p class="text-xs text-center text-gray-400 mt-3">Pinch to zoom • Drag to pan</p>
+    </div>
+
+       <!-- Success Screen (Updated with Auto-Upload Form) -->
+    <div id="successScreen" class="w-full hidden flex flex-col items-center text-center">
+      <div class="p-2 bg-indigo-100 text-indigo-700 rounded-full mb-2">
+        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+      </div>
+      <h2 class="text-lg font-bold text-gray-800">Photo Cropped!</h2>
+      <p class="text-sm text-gray-500 mb-4">Ready to send your 2"x2" magnet photo.</p>
+      
+      <!-- HIDDEN FORM THAT TALKS TO FORMSPREE -->
+      <!-- PASTE YOUR FORMSPREE LINK IN THE ACTION ATTRIBUTE BELOW -->
+      <form id="photoForm" action="https://formspree.io/f/xojobgja" method="POST" enctype="multipart/form-data" class="w-full">
+        <!-- Hidden input that will hold the cropped file -->
+        <input type="file" id="hiddenFileInput" name="magnet_photo" class="hidden">
+        
+        <button type="submit" id="uploadSubmitBtn" class="w-full bg-green-600 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:bg-green-700 transition">
+          Upload Photo to Admin
+        </button>
+      </form>
+
+      <button id="resetBtn" class="text-sm text-indigo-600 font-medium mt-4 hover:underline">Crop Another Photo</button>
+    </div>
+
+      <h2 class="text-lg font-bold text-gray-800">Photo Ready!</h2>
+      <p class="text-sm text-gray-500 mb-4">Your file has been optimized to 600x600 pixels.</p>
+      <a id="downloadLink" download="magnet-photo-600x600.jpg" class="w-full block text-center bg-green-600 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:bg-green-700 transition">
+        Download Cropped Image
+      </a>
+      <button id="resetBtn" class="text-sm text-indigo-600 font-medium mt-4 hover:underline">Crop Another Photo</button>
+    </div>
+
+  </main>
+
+  <!-- Bottom Interactive Buttons -->
+  <footer class="w-full max-w-md mb-4">
+    <button id="cropBtn" class="w-full hidden bg-indigo-600 text-white font-semibold py-4 px-6 rounded-xl shadow-lg hover:bg-indigo-700 transition text-center">
+      Lock Square & Crop
+    </button>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
