@@ -1,6 +1,6 @@
 let cropper;
 let globalBase64Data = ""; // Stores compressed picture bits
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwbFuDm3upARtNqENkme8Q1WPKAr1HZvu399d9jydKQ-B-dLhjNplX54pLEtJ8Ms5Rkmw/exec";
+const GOOGLE_SCRIPT_URL = "17yX06W7LCJ39WmxvVpvwi3CmzroCSnbz";
 
 const imageInput = document.getElementById('imageInput');
 const imageToCrop = document.getElementById('imageToCrop');
