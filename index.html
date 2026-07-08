@@ -258,8 +258,29 @@
     }
     .btn-ghost:hover { color: var(--accent); }
 
-    /* hidden */
+    /* Upload button states */
+    .btn-uploading {
+      background: #6B7B78;
+      color: #fff;
+      cursor: not-allowed;
+      opacity: 0.8;
+      width: 100%;
+    }
+    .btn-success {
+      background: var(--accent);
+      color: #fff;
+      width: 100%;
+    }
+    .btn-error {
+      background: var(--danger);
+      color: #fff;
+      width: 100%;
+    }
+
+    /* hidden — cropScreen needs flex when visible */
     .hidden { display: none !important; }
+    #cropScreen:not(.hidden) { display: flex; }
+    #successScreen:not(.hidden) { display: flex; }
 
     /* ── Cropper overrides ── */
     .cropper-view-box, .cropper-face { border-radius: 4px; }
@@ -309,7 +330,7 @@
           </div>
 
           <!-- Crop -->
-          <div id="cropScreen">
+          <div id="cropScreen" class="hidden">
             <div class="crop-frame">
               <img id="imageToCrop">
             </div>
@@ -317,7 +338,7 @@
           </div>
 
           <!-- Success -->
-          <div id="successScreen">
+          <div id="successScreen" class="hidden">
             <div class="success-icon">
               <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
