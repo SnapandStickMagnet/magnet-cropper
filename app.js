@@ -1,13 +1,8 @@
 let cropper;
 let globalBase64Data = ""; 
 
-// =========================================================================
-// ⚠️ MANDATORY USER CONFIGURATION FIELD:
-// Replace the placeholder link below with your actual Google Web App URL.
-// Ensure your link retains the quotes around it, ending with "/exec".
-// =========================================================================
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxvTfuCM1S4gOc1AXzk7tzz1f2OHKseINl5ui4lWKad1I0oT_-v7DSHxgXLz8EZwA7Spg/exec";
-
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwGJ4Q33F-95EUGtcn6XiTj9BoMbospvGnJgwpHuWvBknJY_3eSdndZ9-kV1VDljpZ87g/exec";
+const AUTH_PASSWORD = new URLSearchParams(window.location.search).get('pwd') || '';
 
 const imageInput = document.getElementById('imageInput');
 const imageToCrop = document.getElementById('imageToCrop');
@@ -25,14 +20,13 @@ imageInput.addEventListener('change', function(e) {
     const reader = new FileReader();
     reader.onload = function(event) {
       imageToCrop.src = event.target.result;
-	  const AUTH_PASSWORD = new URLSearchParams(window.location.search).get('pwd') || '';
       uploadScreen.classList.add('hidden');
       cropScreen.classList.remove('hidden');
       cropBtn.classList.remove('hidden');
 
       if (cropper) cropper.destroy();
       cropper = new Cropper(imageToCrop, {
-        aspectRatio: 1, // Strict locked 1:1 format for magnets
+        aspectRatio: 1,
         viewMode: 1,
         autoCropArea: 1,
         responsive: true,
@@ -54,7 +48,6 @@ cropBtn.addEventListener('click', function() {
     imageSmoothingQuality: 'high'
   });
 
-  // Extract raw base64 data stream to hand off natively to Google
   const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
   globalBase64Data = dataUrl.split(',')[1]; 
 
@@ -63,7 +56,7 @@ cropBtn.addEventListener('click', function() {
   successScreen.classList.remove('hidden');
 });
 
-// 3. Direct Streaming Connection Upload to your Personal Google Drive Folder
+// 3. Upload to Google Drive
 uploadSubmitBtn.addEventListener('click', function() {
   if (!globalBase64Data) return;
 
@@ -73,15 +66,13 @@ uploadSubmitBtn.addEventListener('click', function() {
 
   const payload = new URLSearchParams();
   payload.append("base64Data", globalBase64Data);
+  payload.append("pwd", AUTH_PASSWORD);
 
   fetch(GOOGLE_SCRIPT_URL, {
     method: "POST",
     body: payload,
     headers: {
       "Content-Type": "application/x-www-form-urlencoded"
-	  const payload = new URLSearchParams();
-payload.append("base64Data", globalBase64Data);
-payload.append("pwd", AUTH_PASSWORD);  //
     }
   })
   .then(response => {
@@ -96,7 +87,7 @@ payload.append("pwd", AUTH_PASSWORD);  //
   });
 });
 
-// 4. Clean app state framework reset
+// 4. Reset
 resetBtn.addEventListener('click', function() {
   imageInput.value = '';
   globalBase64Data = "";
