@@ -38,7 +38,7 @@ imageInput.addEventListener('change', function(e) {
         background: false
       });
     };
-    reader.readAsDataURL(files);
+    reader.readAsDataURL(files[0]);
   }
 });
 
@@ -67,10 +67,9 @@ uploadSubmitBtn.addEventListener('click', function() {
   if (!globalBase64Data) return;
 
   uploadSubmitBtn.disabled = true;
-  uploadSubmitBtn.innerText = "Uploading to Drive... 🚀";
-  uploadSubmitBtn.className = "w-full bg-slate-400 text-white font-semibold py-4 px-6 rounded-2xl cursor-not-allowed text-center";
+  uploadSubmitBtn.innerText = "Uploading to Drive…";
+  uploadSubmitBtn.className = "btn btn-uploading";
 
-  // Formats data payload structure cleanly to pass through Google firewall limits
   const payload = new URLSearchParams();
   payload.append("base64Data", globalBase64Data);
 
@@ -82,14 +81,14 @@ uploadSubmitBtn.addEventListener('click', function() {
     }
   })
   .then(response => {
-    uploadSubmitBtn.innerText = "Upload Complete! Check Drive ✅";
-    uploadSubmitBtn.className = "w-full bg-emerald-600 text-white font-semibold py-4 px-6 rounded-2xl text-center";
+    uploadSubmitBtn.innerText = "Upload complete — check Drive ✓";
+    uploadSubmitBtn.className = "btn btn-success";
   })
   .catch(err => {
     console.error("Upload Error Details:", err);
     uploadSubmitBtn.disabled = false;
-    uploadSubmitBtn.innerText = "Error. Try Again";
-    uploadSubmitBtn.className = "w-full bg-red-600 text-white font-semibold py-4 px-6 rounded-2xl text-center";
+    uploadSubmitBtn.innerText = "Upload failed — try again";
+    uploadSubmitBtn.className = "btn btn-error";
   });
 });
 
@@ -99,8 +98,8 @@ resetBtn.addEventListener('click', function() {
   globalBase64Data = "";
   if (cropper) cropper.destroy();
   uploadSubmitBtn.disabled = false;
-  uploadSubmitBtn.innerText = "Upload Photo to Google Drive";
-  uploadSubmitBtn.className = "w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-4 px-6 rounded-2xl transition-all duration-200";
+  uploadSubmitBtn.innerText = "Upload to Google Drive";
+  uploadSubmitBtn.className = "btn btn-dark";
   successScreen.classList.add('hidden');
   uploadScreen.classList.remove('hidden');
 });
