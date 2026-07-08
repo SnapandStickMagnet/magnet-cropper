@@ -3,87 +3,381 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Magnet Studio | Perfect 2x2" Prints</title>
-  <!-- Tailwind CSS & Fonts -->
-  <script src="https://tailwindcss.com"></script>
-  <link rel="preconnect" href="https://googleapis.com">
-  <link rel="preconnect" href="https://gstatic.com" crossorigin>
-  <link href="https://googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <!-- Cropper.js Mobile Engine -->
-  <link rel="stylesheet" href="https://cloudflare.com">
-  <script src="https://cloudflare.com"></script>
-  
+  <title>Magnet Studio — 2×2" Prints</title>
+
+  <!-- Cropper.js -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
+
   <style>
-    body { font-family: 'Plus Jakarta Sans', sans-serif; }
-    .cropper-view-box, .cropper-face { border-radius: 8px; }
-    .cropper-line, .cropper-point { background-color: #6366f1; }
+    /* ── Tokens ── */
+    :root {
+      --bg:       #F7F6F2;
+      --surface:  #FFFFFF;
+      --border:   #D8D6CF;
+      --ink:      #17201F;
+      --ink-mid:  #5A6360;
+      --ink-dim:  #9CA8A5;
+      --accent:   #1A6B5A;   /* deep teal — the one bold choice */
+      --accent-h: #145548;
+      --danger:   #C0392B;
+      --radius:   14px;
+      --radius-sm: 8px;
+    }
+
+    /* ── Reset ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.5;
+      background: var(--bg);
+      color: var(--ink);
+      min-height: 100svh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ── Layout shell ── */
+    .shell {
+      width: 100%;
+      max-width: 480px;
+      padding: 0 20px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    .site-header {
+      padding: 36px 0 28px;
+      text-align: center;
+    }
+    .site-header .eyebrow {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--ink-dim);
+      margin-bottom: 10px;
+    }
+    .site-header h1 {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: clamp(28px, 7vw, 38px);
+      font-weight: normal;
+      letter-spacing: -0.01em;
+      color: var(--ink);
+      line-height: 1.1;
+    }
+    .site-header .sub {
+      margin-top: 6px;
+      font-size: 13px;
+      color: var(--ink-mid);
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: 0 2px 0 var(--border), 0 8px 24px rgba(23,32,31,0.06);
+      overflow: hidden;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 20px;
+    }
+
+    .card-body {
+      padding: 28px 24px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .card-footer {
+      border-top: 1px solid var(--border);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--bg);
+    }
+    .step-pip {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--border);
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+    .step-pip.active { background: var(--accent); }
+    .step-label {
+      font-size: 12px;
+      color: var(--ink-mid);
+      margin-left: auto;
+    }
+
+    /* ── Upload screen ── */
+    #uploadScreen { width: 100%; }
+
+    .drop-zone {
+      width: 100%;
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 48px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      text-align: center;
+    }
+    .drop-zone:hover, .drop-zone:focus-within {
+      border-color: var(--accent);
+      background: rgba(26,107,90,0.04);
+    }
+
+    .drop-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .drop-icon svg { width: 26px; height: 26px; color: var(--ink-mid); }
+
+    .drop-title {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 20px;
+      color: var(--ink);
+    }
+    .drop-hint {
+      font-size: 13px;
+      color: var(--ink-dim);
+      max-width: 240px;
+    }
+
+    /* ── Crop screen ── */
+    #cropScreen { width: 100%; display: none; flex-direction: column; align-items: center; gap: 14px; }
+
+    .crop-frame {
+      width: 100%;
+      max-width: 380px;
+      aspect-ratio: 1;
+      background: var(--ink);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+    }
+    #imageToCrop { display: block; max-width: 100%; }
+
+    .crop-hint {
+      font-size: 12px;
+      color: var(--ink-dim);
+      text-align: center;
+      letter-spacing: 0.02em;
+    }
+
+    /* ── Success screen ── */
+    #successScreen { width: 100%; display: none; flex-direction: column; align-items: center; gap: 0; text-align: center; }
+
+    .success-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: rgba(26,107,90,0.1);
+      border: 1.5px solid rgba(26,107,90,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+    .success-icon svg { width: 26px; height: 26px; color: var(--accent); }
+
+    .success-title {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 22px;
+      color: var(--ink);
+      margin-bottom: 6px;
+    }
+    .success-sub {
+      font-size: 13px;
+      color: var(--ink-mid);
+      margin-bottom: 28px;
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      padding: 14px 24px;
+      border-radius: var(--radius-sm);
+      border: none;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s, opacity 0.15s;
+      text-decoration: none;
+      width: 100%;
+    }
+    .btn:active { transform: scale(0.98); }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+    .btn-primary:hover { background: var(--accent-h); }
+
+    .btn-dark {
+      background: var(--ink);
+      color: #fff;
+    }
+    .btn-dark:hover { background: #0e1514; }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--ink-mid);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 10px 0;
+      width: auto;
+      margin-top: 4px;
+    }
+    .btn-ghost:hover { color: var(--accent); }
+
+    /* hidden */
+    .hidden { display: none !important; }
+
+    /* ── Cropper overrides ── */
+    .cropper-view-box, .cropper-face { border-radius: 4px; }
+    .cropper-line, .cropper-point { background-color: var(--accent); }
+    .cropper-point { opacity: 0.9; }
+
+    /* ── Footer ── */
+    .site-footer {
+      padding: 0 0 28px;
+      width: 100%;
+      max-width: 480px;
+    }
+
+    /* ── Reduced motion ── */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition: none !important; animation: none !important; }
+    }
   </style>
 </head>
-<body class="bg-slate-50 min-h-screen flex flex-col items-center justify-between p-4 antialiased selection:bg-indigo-500 selection:text-white">
 
-  <!-- Elegant Brand Header -->
-  <header class="text-center my-6">
-    <div class="inline-flex items-center gap-2 px-3 py-1 bg-indigo-50 border border-indigo-100 rounded-full text-indigo-700 text-xs font-semibold tracking-wide uppercase mb-2">
-      ⚡ Print Optimizer
-    </div>
-    <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">Magnet Studio</h1>
-    <p class="text-sm text-slate-500 mt-1 max-w-xs mx-auto">Upload and crop your photo into a flawless, high-resolution 2" × 2" print layout.</p>
-  </header>
+<body>
+  <div class="shell">
 
-  <!-- Premium Card Workspace -->
-  <main class="w-full max-w-md bg-white rounded-3xl border border-slate-100 shadow-[0_20px_50px_rgba(0,0,0,0.04)] overflow-hidden p-6 flex flex-col items-center justify-center flex-grow mb-6 transition-all duration-300">
-    
-    <!-- Upload Screen -->
-    <div id="uploadScreen" class="w-full flex flex-col items-center justify-center border-2 border-dashed border-slate-200 hover:border-indigo-400 rounded-2xl p-10 bg-slate-50/50 cursor-pointer transition-all duration-300 group">
-      <label class="w-full text-center cursor-pointer">
-        <div class="mx-auto h-16 w-16 bg-white rounded-2xl shadow-sm flex items-center justify-center border border-slate-100 group-hover:scale-105 group-hover:shadow-md transition-all duration-300">
-          <svg class="h-7 w-7 text-indigo-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-          </svg>
+    <header class="site-header">
+      <span class="eyebrow">2 × 2 inch prints</span>
+      <h1>Magnet Studio</h1>
+      <p class="sub">Crop, lock, and send to print — 600 × 600 px / 300 dpi</p>
+    </header>
+
+    <main>
+      <div class="card">
+        <div class="card-body">
+
+          <!-- Upload -->
+          <div id="uploadScreen">
+            <label class="drop-zone">
+              <div class="drop-icon">
+                <svg fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+              </div>
+              <span class="drop-title">Choose or snap a photo</span>
+              <span class="drop-hint">Camera roll or live camera — any image works</span>
+              <input type="file" id="imageInput" accept="image/*" style="display:none">
+            </label>
+          </div>
+
+          <!-- Crop -->
+          <div id="cropScreen">
+            <div class="crop-frame">
+              <img id="imageToCrop">
+            </div>
+            <p class="crop-hint">Drag to position · pinch or scroll to resize</p>
+          </div>
+
+          <!-- Success -->
+          <div id="successScreen">
+            <div class="success-icon">
+              <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+              </svg>
+            </div>
+            <h2 class="success-title">Photo locked in</h2>
+            <p class="success-sub">600 × 600 px · ready to print</p>
+
+            <button id="uploadSubmitBtn" class="btn btn-dark">
+              Upload to Google Drive
+            </button>
+            <button id="resetBtn" class="btn btn-ghost">← Start over</button>
+          </div>
+
         </div>
-        <span class="mt-5 block text-base font-semibold text-slate-800">Choose or Snap a Photo</span>
-        <span class="mt-1 block text-xs text-slate-400">Supports standard mobile camera uploads</span>
-        <input type="file" id="imageInput" accept="image/*" class="hidden">
-      </label>
-    </div>
 
-    <!-- Crop Screen -->
-    <div id="cropScreen" class="w-full hidden flex flex-col items-center">
-      <div class="w-full aspect-square bg-slate-900 rounded-2xl overflow-hidden shadow-inner max-h-[70vw] sm:max-h-[380px] border border-slate-800">
-        <img id="imageToCrop" class="max-w-full block">
+        <!-- Card footer: step indicator -->
+        <div class="card-footer">
+          <div class="step-pip active" id="pip1"></div>
+          <div class="step-pip"       id="pip2"></div>
+          <div class="step-pip"       id="pip3"></div>
+          <span class="step-label" id="stepLabel">Step 1 of 3 — Choose photo</span>
+        </div>
       </div>
-      <div class="flex items-center gap-1.5 text-xs font-medium text-slate-400 mt-4 bg-slate-100 px-3 py-1.5 rounded-full">
-        Drag to position • Pinch to resize
-      </div>
-    </div>
+    </main>
 
-    <!-- Success Screen (Single Correct Layout) -->
-    <div id="successScreen" class="w-full hidden flex flex-col items-center text-center py-4">
-      <div class="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center border border-emerald-100 mb-4">
-        <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
-      </div>
-      <h2 class="text-xl font-bold text-slate-900">Photo Perfected!</h2>
-      <p class="text-sm text-slate-500 mb-6 max-w-xs">Your image has been permanently locked into a high-density 600 × 600px square format.</p>
-      
-      <!-- DIRECT SUBMIT BUTTON -->
-      <button id="uploadSubmitBtn" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-4 px-6 rounded-2xl shadow-xl shadow-slate-900/10 hover:shadow-slate-900/20 transition-all duration-200">
-        Upload Photo to Google Drive
-      </button>
+  </div>
 
-      <button id="resetBtn" class="text-sm text-slate-400 hover:text-indigo-600 font-semibold mt-5 transition-colors duration-200">
-        ← Start Over
-      </button>
-    </div>
-
-  </main>
-
-  <!-- Sticky Bottom Processing Banner -->
-  <footer class="w-full max-w-md mb-6">
-    <button id="cropBtn" class="w-full hidden bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-4 px-6 rounded-2xl shadow-xl shadow-indigo-600/20 transition-all duration-200 text-center">
-      Lock Layout & Crop Image
+  <!-- Sticky crop button lives outside the card so it's always reachable -->
+  <footer class="site-footer" style="padding-left:20px;padding-right:20px;">
+    <button id="cropBtn" class="btn btn-primary hidden">
+      Lock layout &amp; crop
     </button>
   </footer>
 
   <script src="app.js"></script>
+
+  <!-- Step indicator wiring (self-contained, doesn't need app.js) -->
+  <script>
+    const pip1 = document.getElementById('pip1');
+    const pip2 = document.getElementById('pip2');
+    const pip3 = document.getElementById('pip3');
+    const stepLabel = document.getElementById('stepLabel');
+
+    function setStep(n) {
+      [pip1, pip2, pip3].forEach((p, i) => p.classList.toggle('active', i < n));
+      const labels = ['Step 1 of 3 — Choose photo', 'Step 2 of 3 — Crop image', 'Step 3 of 3 — Ready to upload'];
+      stepLabel.textContent = labels[n - 1] || '';
+    }
+
+    // Hook into screen visibility changes to update the indicator
+    const observer = new MutationObserver(() => {
+      const upload  = document.getElementById('uploadScreen');
+      const crop    = document.getElementById('cropScreen');
+      const success = document.getElementById('successScreen');
+      if (success && success.style.display !== 'none' && !success.classList.contains('hidden')) setStep(3);
+      else if (crop && crop.style.display !== 'none' && !crop.classList.contains('hidden')) setStep(2);
+      else setStep(1);
+    });
+    observer.observe(document.querySelector('.card-body'), { childList: false, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
+  </script>
 </body>
 </html>
