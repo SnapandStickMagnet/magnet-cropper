@@ -75,7 +75,6 @@ uploadSubmitBtn.addEventListener('click', function() {
       "Content-Type": "application/x-www-form-urlencoded"
     },
     redirect: 'follow'
-  }
   })
   .then(response => response.json())
   .then(data => {
