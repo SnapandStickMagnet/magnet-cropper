@@ -25,6 +25,7 @@ imageInput.addEventListener('change', function(e) {
     const reader = new FileReader();
     reader.onload = function(event) {
       imageToCrop.src = event.target.result;
+	  const AUTH_PASSWORD = new URLSearchParams(window.location.search).get('pwd') || '';
       uploadScreen.classList.add('hidden');
       cropScreen.classList.remove('hidden');
       cropBtn.classList.remove('hidden');
@@ -78,6 +79,9 @@ uploadSubmitBtn.addEventListener('click', function() {
     body: payload,
     headers: {
       "Content-Type": "application/x-www-form-urlencoded"
+	  const payload = new URLSearchParams();
+payload.append("base64Data", globalBase64Data);
+payload.append("pwd", AUTH_PASSWORD);  //
     }
   })
   .then(response => {
