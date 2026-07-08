@@ -6,7 +6,7 @@ let globalBase64Data = "";
 // Replace the placeholder link below with your actual Google Web App URL.
 // Ensure your link retains the quotes around it, ending with "/exec".
 // =========================================================================
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwGJ4Q33F-95EUGtcn6XiTj9BoMbospvGnJgwpHuWvBknJY_3eSdndZ9-kV1VDljpZ87g/exec";
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxvTfuCM1S4gOc1AXzk7tzz1f2OHKseINl5ui4lWKad1I0oT_-v7DSHxgXLz8EZwA7Spg/exec";
 
 
 const imageInput = document.getElementById('imageInput');
