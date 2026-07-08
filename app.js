@@ -1,7 +1,7 @@
 let cropper;
 let globalBase64Data = ""; 
 
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyMANt2wsFSywBL4pGRSaeb99LmBleWaCZCzuJlb-Io_gj_FZuRoI0KbhFYpu2miixL2Q/exec";
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwGJ4Q33F-95EUGtcn6XiTj9BoMbospvGnJgwpHuWvBknJY_3eSdndZ9-kV1VDljpZ87g/exec";
 const AUTH_PASSWORD = new URLSearchParams(window.location.search).get('pwd') || '';
 
 const imageInput = document.getElementById('imageInput');
@@ -12,6 +12,7 @@ const successScreen = document.getElementById('successScreen');
 const cropBtn = document.getElementById('cropBtn');
 const uploadSubmitBtn = document.getElementById('uploadSubmitBtn');
 const resetBtn = document.getElementById('resetBtn');
+const nameInput = document.getElementById('nameInput');
 
 // 1. Listen for mobile user photo uploads
 imageInput.addEventListener('change', function(e) {
@@ -67,6 +68,7 @@ uploadSubmitBtn.addEventListener('click', function() {
   const payload = new URLSearchParams();
   payload.append("base64Data", globalBase64Data);
   payload.append("pwd", AUTH_PASSWORD);
+  payload.append("name", nameInput.value.trim() || "unknown");
 
   fetch(GOOGLE_SCRIPT_URL, {
     method: "POST",
@@ -98,6 +100,7 @@ uploadSubmitBtn.addEventListener('click', function() {
 // 4. Reset
 resetBtn.addEventListener('click', function() {
   imageInput.value = '';
+  nameInput.value = '';
   globalBase64Data = "";
   if (cropper) cropper.destroy();
   uploadSubmitBtn.disabled = false;
