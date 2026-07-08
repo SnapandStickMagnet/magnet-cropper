@@ -1,7 +1,7 @@
 let cropper;
 let globalBase64Data = ""; 
 
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwGJ4Q33F-95EUGtcn6XiTj9BoMbospvGnJgwpHuWvBknJY_3eSdndZ9-kV1VDljpZ87g/exec";
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyMANt2wsFSywBL4pGRSaeb99LmBleWaCZCzuJlb-Io_gj_FZuRoI0KbhFYpu2miixL2Q/exec";
 const AUTH_PASSWORD = new URLSearchParams(window.location.search).get('pwd') || '';
 
 const imageInput = document.getElementById('imageInput');
