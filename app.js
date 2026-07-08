@@ -65,16 +65,17 @@ uploadSubmitBtn.addEventListener('click', function() {
   uploadSubmitBtn.innerText = "Uploading to Drive…";
   uploadSubmitBtn.className = "btn btn-uploading";
 
-  const payload = new URLSearchParams();
-  payload.append("base64Data", globalBase64Data);
-  payload.append("pwd", AUTH_PASSWORD);
-  payload.append("name", nameInput.value.trim() || "unknown");
+  const payload = JSON.stringify({
+    base64Data: globalBase64Data,
+    pwd: AUTH_PASSWORD,
+    name: nameInput.value.trim() || "unknown"
+  });
 
   fetch(GOOGLE_SCRIPT_URL, {
     method: "POST",
     body: payload,
     headers: {
-      "Content-Type": "application/x-www-form-urlencoded"
+      "Content-Type": "application/json"
     },
     redirect: 'follow'
   })
