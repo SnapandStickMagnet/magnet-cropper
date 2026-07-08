@@ -76,8 +76,17 @@ uploadSubmitBtn.addEventListener('click', function() {
     }
   })
   .then(response => {
-    uploadSubmitBtn.innerText = "Upload complete — check Drive ✓";
-    uploadSubmitBtn.className = "btn btn-success";
+    .then(response => response.json())
+  .then(data => {
+    if (data.status === "success") {
+      uploadSubmitBtn.innerText = "Upload complete — check Drive ✓";
+      uploadSubmitBtn.className = "btn btn-success";
+    } else {
+      uploadSubmitBtn.disabled = false;
+      uploadSubmitBtn.innerText = "Upload failed — try again";
+      uploadSubmitBtn.className = "btn btn-error";
+    }
+  
   })
   .catch(err => {
     console.error("Upload Error Details:", err);
