@@ -1,7 +1,7 @@
 let cropper;
 let globalBase64Data = ""; 
 
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyMANt2wsFSywBL4pGRSaeb99LmBleWaCZCzuJlb-Io_gj_FZuRoI0KbhFYpu2miixL2Q/exec";
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwGJ4Q33F-95EUGtcn6XiTj9BoMbospvGnJgwpHuWvBknJY_3eSdndZ9-kV1VDljpZ87g/exec";
 const AUTH_PASSWORD = new URLSearchParams(window.location.search).get('pwd') || '';
 
 const imageInput = document.getElementById('imageInput');
@@ -65,18 +65,14 @@ uploadSubmitBtn.addEventListener('click', function() {
   uploadSubmitBtn.innerText = "Uploading to Drive…";
   uploadSubmitBtn.className = "btn btn-uploading";
 
-  const payload = JSON.stringify({
-    base64Data: globalBase64Data,
-    pwd: AUTH_PASSWORD,
-    name: nameInput.value.trim() || "unknown"
-  });
+  const payload = new FormData();
+  payload.append("base64Data", globalBase64Data);
+  payload.append("pwd", AUTH_PASSWORD);
+  payload.append("name", nameInput.value.trim() || "unknown");
 
   fetch(GOOGLE_SCRIPT_URL, {
     method: "POST",
     body: payload,
-    headers: {
-      "Content-Type": "application/json"
-    },
     redirect: 'follow'
   })
   .then(response => response.json())
