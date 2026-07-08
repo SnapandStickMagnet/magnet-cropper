@@ -75,8 +75,7 @@ uploadSubmitBtn.addEventListener('click', function() {
       "Content-Type": "application/x-www-form-urlencoded"
     }
   })
-  .then(response => {
-    .then(response => response.json())
+  .then(response => response.json())
   .then(data => {
     if (data.status === "success") {
       uploadSubmitBtn.innerText = "Upload complete — check Drive ✓";
@@ -86,7 +85,6 @@ uploadSubmitBtn.addEventListener('click', function() {
       uploadSubmitBtn.innerText = "Upload failed — try again";
       uploadSubmitBtn.className = "btn btn-error";
     }
-  
   })
   .catch(err => {
     console.error("Upload Error Details:", err);
