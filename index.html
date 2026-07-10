@@ -51,19 +51,29 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      border-left: 5px solid var(--accent-h);
-      border-right: 5px solid var(--accent-h);
       position: relative;
     }
+    /* Elegant double-line side borders */
     .page-frame::before, .page-frame::after {
       content: '';
-      position: absolute;
+      position: fixed;
       top: 0; bottom: 0;
-      width: 3px;
-      background: rgba(255,255,255,0.18);
+      width: 18px;
+      pointer-events: none;
+      z-index: 100;
     }
-    .page-frame::before { left: 5px; }
-    .page-frame::after  { right: 5px; }
+    .page-frame::before {
+      left: 0;
+      border-left: 1px solid rgba(26,107,90,0.35);
+      border-right: 1px solid rgba(26,107,90,0.12);
+      background: linear-gradient(to right, rgba(26,107,90,0.06), transparent);
+    }
+    .page-frame::after {
+      right: 0;
+      border-right: 1px solid rgba(26,107,90,0.35);
+      border-left: 1px solid rgba(26,107,90,0.12);
+      background: linear-gradient(to left, rgba(26,107,90,0.06), transparent);
+    }
 
     /* ── Hero header band ── */
     .site-hero {
@@ -77,7 +87,7 @@
 
     .site-hero svg.logo {
       display: block;
-      width: 300px;
+      width: 420px;
       height: auto;
     }
 
@@ -415,11 +425,11 @@
       <!-- Base -->
       <ellipse class="base" cx="295" cy="131" rx="3.5" ry="5"/>
       <!-- Name -->
-      <text class="logo-name" x="295" y="158" text-anchor="middle" font-family="Georgia,'Times New Roman',serif" font-size="34" font-weight="normal" letter-spacing="-0.3">Snap &amp; Stick Magnet Co.</text>
+      <text class="logo-name" x="295" y="158" text-anchor="middle" font-family="Georgia,'Times New Roman',serif" font-size="42" font-weight="normal" letter-spacing="-0.3">Snap &amp; Stick Magnet Co.</text>
       <!-- Rule -->
       <line class="logo-rule" x1="148" y1="172" x2="442" y2="172" stroke-width="1.2"/>
       <!-- Tag -->
-      <text class="logo-tag" x="295" y="194" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="14" font-weight="600" letter-spacing="0.14em">PERSONALIZED KEEPSAKE MAGNETS</text>
+      <text class="logo-tag" x="295" y="194" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="17" font-weight="600" letter-spacing="0.14em">PERSONALIZED KEEPSAKE MAGNETS</text>
     </svg>
   </div>
 
