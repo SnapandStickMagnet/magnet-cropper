@@ -309,26 +309,21 @@ function finishSheet(canvas) {
 uploadSubmitBtn.addEventListener('click', function() {
   if (!window._sheetBase64) return;
 
-  const name  = nameInput.value.trim();
-  const phone = phoneInput.value.trim();
-  const email = emailInput.value.trim();
+  const name    = nameInput.value.trim();
+  const contact = phoneInput.value.trim(); // email or phone
   const formError = document.getElementById('formError');
 
-  // Clear previous invalid states
-  [nameInput, phoneInput, emailInput].forEach(el => el.classList.remove('invalid'));
+  [nameInput, phoneInput].forEach(el => el.classList.remove('invalid'));
   formError.style.display = 'none';
 
-  // Validate — all three required
   let valid = true;
-  if (!name)                        { nameInput.classList.add('invalid');  valid = false; }
-  if (!phone)                       { phoneInput.classList.add('invalid'); valid = false; }
-  if (!email || !email.includes('@')) { emailInput.classList.add('invalid'); valid = false; }
+  if (!name)    { nameInput.classList.add('invalid');  valid = false; }
+  if (!contact) { phoneInput.classList.add('invalid'); valid = false; }
 
   if (!valid) {
     formError.style.display = 'block';
-    // Scroll error into view on mobile
     formError.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    return; // hard stop — do not proceed
+    return;
   }
 
   uploadSubmitBtn.disabled = true;
@@ -337,11 +332,10 @@ uploadSubmitBtn.addEventListener('click', function() {
 
   const payload = new FormData();
   payload.append('base64Data', window._sheetBase64);
-  payload.append('pwd',   AUTH_PASSWORD);
-  payload.append('name',  name);
-  payload.append('phone', phone);
-  payload.append('email', email);
-  payload.append('notes', notesInput.value.trim());
+  payload.append('pwd',     AUTH_PASSWORD);
+  payload.append('name',    name);
+  payload.append('contact', contact);
+  payload.append('notes',   notesInput.value.trim());
 
   fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: payload, redirect: 'follow' })
     .then(r => r.json())
@@ -371,9 +365,8 @@ resetBtn.addEventListener('click', function() {
   imageInput.value = '';
   nameInput.value = '';
   phoneInput.value = '';
-  emailInput.value = '';
   notesInput.value = '';
-  [nameInput, phoneInput, emailInput].forEach(el => el.classList.remove('invalid'));
+  [nameInput, phoneInput].forEach(el => el.classList.remove('invalid'));
   document.getElementById('formError').style.display = 'none';
   uploadSubmitBtn.disabled = false;
   uploadSubmitBtn.innerText = 'Submit Photos';
