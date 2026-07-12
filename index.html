@@ -390,7 +390,7 @@
     #sheetScreen { width: 100%; display: none; flex-direction: column; align-items: center; gap: 16px; }
     .sheet-grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(3, 1fr);
       gap: 6px;
       width: 100%;
     }
@@ -495,6 +495,100 @@
     }
     .crop-modal-actions { display: flex; gap: 10px; }
     .crop-modal-actions .btn { flex: 1; }
+
+    /* ── How-to link ── */
+    .how-to-link {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin: 16px auto 0;
+      background: none;
+      border: none;
+      color: var(--accent);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 6px 10px;
+      border-radius: 6px;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    .how-to-link:hover { opacity: 0.75; }
+
+    /* ── How-to modal ── */
+    .howto-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 300;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 0;
+    }
+    .howto-overlay.active { display: flex; }
+    .howto-sheet {
+      background: var(--surface);
+      border-radius: 20px 20px 0 0;
+      padding: 28px 24px 40px;
+      width: 100%;
+      max-width: 600px;
+      max-height: 88svh;
+      overflow-y: auto;
+    }
+    .howto-handle {
+      width: 40px; height: 4px;
+      background: var(--border);
+      border-radius: 99px;
+      margin: 0 auto 24px;
+    }
+    .howto-title {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 20px;
+      color: var(--ink);
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .howto-step {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 22px;
+      align-items: flex-start;
+    }
+    .howto-num {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .howto-step-body { flex: 1; }
+    .howto-step-title {
+      font-weight: 600;
+      font-size: 15px;
+      color: var(--ink);
+      margin-bottom: 3px;
+    }
+    .howto-step-desc {
+      font-size: 13px;
+      color: var(--ink-mid);
+      line-height: 1.55;
+    }
+    .howto-step-icon {
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      background: var(--accent-light);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .howto-step-icon svg { width: 22px; height: 22px; color: var(--accent); }
+    .howto-close {
+      width: 100%;
+      margin-top: 8px;
+    }
 
     /* ── Contact form (step 4) ── */
     .contact-form {
@@ -605,6 +699,12 @@
               <span class="drop-hint">Camera roll or live camera — any image works</span>
               <input type="file" id="imageInput" accept="image/*" style="display:none">
             </label>
+            <button class="how-to-link" id="howToBtn" type="button">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="15" height="15">
+                <circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M12 16v-4m0-4h.01"/>
+              </svg>
+              How to submit your photos
+            </button>
           </div>
 
           <!-- Screen 2: Crop (inline, hidden when modal is used) -->
@@ -668,6 +768,56 @@
     </button>
   </footer>
 
+  <!-- How-to guide modal -->
+  <div class="howto-overlay" id="howtoOverlay">
+    <div class="howto-sheet">
+      <div class="howto-handle"></div>
+      <h2 class="howto-title">How to Submit Your Photos</h2>
+
+      <div class="howto-step">
+        <div class="howto-num">1</div>
+        <div class="howto-step-body">
+          <div class="howto-step-title">Tap "Choose or snap a photo"</div>
+          <div class="howto-step-desc">Tap the upload area on the main screen. You can select a photo from your camera roll or take a new one with your camera.</div>
+        </div>
+      </div>
+
+      <div class="howto-step">
+        <div class="howto-num">2</div>
+        <div class="howto-step-body">
+          <div class="howto-step-title">Crop your photo into a square</div>
+          <div class="howto-step-desc">Drag and pinch to position your photo inside the square frame. Make sure the most important part of your image is centred. Tap "Use this crop" when happy.</div>
+        </div>
+      </div>
+
+      <div class="howto-step">
+        <div class="howto-num">3</div>
+        <div class="howto-step-body">
+          <div class="howto-step-title">Fill up to 12 photo slots</div>
+          <div class="howto-step-desc">You'll see a grid of 12 slots. Tap any empty slot to add another photo. You can add between 1 and 12 photos — duplicate photos are fine if you want extras of the same magnet. Tap × on any photo to remove and replace it.</div>
+        </div>
+      </div>
+
+      <div class="howto-step">
+        <div class="howto-num">4</div>
+        <div class="howto-step-body">
+          <div class="howto-step-title">Tap "Select Photos" to continue</div>
+          <div class="howto-step-desc">Once you've added at least one photo, the "Select Photos" button appears at the bottom. Tap it to prepare your order.</div>
+        </div>
+      </div>
+
+      <div class="howto-step">
+        <div class="howto-num">5</div>
+        <div class="howto-step-body">
+          <div class="howto-step-title">Enter your details and submit</div>
+          <div class="howto-step-desc">Fill in your full name and contact info (email or phone number). Add any special notes if needed, then tap "Submit Photos." You'll get a confirmation and we'll be in touch with your order details!</div>
+        </div>
+      </div>
+
+      <button class="btn btn-dark howto-close" id="howtoClose">Got it!</button>
+    </div>
+  </div>
+
   <!-- Crop modal for sheet slots -->
   <div class="crop-modal-overlay" id="cropModalOverlay">
     <div class="crop-modal">
@@ -711,6 +861,12 @@
       else setStep(1);
     });
     observer.observe(document.querySelector('.card-body'), { childList: false, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
+
+    // How-to modal
+    const howtoOverlay = document.getElementById('howtoOverlay');
+    document.getElementById('howToBtn').addEventListener('click', () => howtoOverlay.classList.add('active'));
+    document.getElementById('howtoClose').addEventListener('click', () => howtoOverlay.classList.remove('active'));
+    howtoOverlay.addEventListener('click', e => { if (e.target === howtoOverlay) howtoOverlay.classList.remove('active'); });
   </script>
 </div>
 </body>

@@ -7,17 +7,18 @@ const TOTAL_SLOTS = 12;
 // Each cell = exactly 50×50mm at 300 DPI.
 // 50mm × (300 / 25.4) = 590.55 → 591px
 // Sheet = 8.5×11" = 2550×3300 px.
-// 4 cols × 3 rows. Gap between cells = ~3mm = 35px.
-// BORDER: thin solid grey line drawn right on each cell edge as cut guide.
+// 3 cols × 4 rows — more vertical layout as requested.
+// Gap between cells = 8mm = 94px — bigger gaps between pictures.
+// BORDER: thick rounded border as cut guide.
 // ROUNDED CORNERS: clipped to match the Chinese 50mm press radius (~3mm).
 const DPI         = 300;
-const MM_TO_PX    = DPI / 25.4;              // 11.811 px per mm
+const MM_TO_PX    = DPI / 25.4;               // 11.811 px per mm
 const CELL        = Math.round(50 * MM_TO_PX); // 591px — exactly 50mm
-const COLS        = 4;
-const ROWS        = 3;
-const SHEET_W     = Math.round(8.5 * DPI);   // 2550
-const SHEET_H     = Math.round(11  * DPI);   // 3300
-const GAP         = Math.round(3 * MM_TO_PX);  // 3mm gap between cells = 35px
+const COLS        = 3;
+const ROWS        = 4;
+const SHEET_W     = Math.round(8.5 * DPI);    // 2550
+const SHEET_H     = Math.round(11  * DPI);    // 3300
+const GAP         = Math.round(8 * MM_TO_PX); // 8mm gap = 94px — bigger spacing
 const CONTENT_W   = COLS * CELL + (COLS - 1) * GAP;
 const CONTENT_H   = ROWS * CELL + (ROWS - 1) * GAP;
 const ORIGIN_X    = Math.round((SHEET_W - CONTENT_W) / 2);
