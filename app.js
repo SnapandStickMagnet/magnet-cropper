@@ -3,46 +3,52 @@ const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyMANt2wsFSyw
 const AUTH_PASSWORD = new URLSearchParams(window.location.search).get('pwd') || '';
 const TOTAL_SLOTS = 12;
 
-// Sheet geometry — strict 2×2" cells at 300 DPI
-// Cell = exactly 600×600 px. Sheet = 8.5×11" = 2550×3300 px.
-// 4 cols × 3 rows of 600px cells = 2400 × 1800 px content area.
-// Remaining space split as margins: (2550-2400)/2 = 75px side, (3300-1800)/2 = 750px top (centre vertically).
-// Gap between cells: 0 (butted together so cut lines are shared).
-const DPI    = 300;
-const CELL   = 600;          // 2 inches × 300 DPI — never changes
-const COLS   = 4;
-const ROWS   = 3;
-const SHEET_W = Math.round(8.5 * DPI);  // 2550
-const SHEET_H = Math.round(11  * DPI);  // 3300
-const GAP    = Math.round(0.0625 * DPI); // 1/16" gap between cells = 18.75 → 19px
-const CONTENT_W = COLS * CELL + (COLS - 1) * GAP; // 2457
-const CONTENT_H = ROWS * CELL + (ROWS - 1) * GAP; // 1857
-const ORIGIN_X  = Math.round((SHEET_W - CONTENT_W) / 2); // left margin
-const ORIGIN_Y  = Math.round((SHEET_H - CONTENT_H) / 2); // top margin
+// ── Sheet geometry ────────────────────────────────────────────────────────────
+// Each cell = exactly 2×2" = 600×600 px at 300 DPI.
+// Sheet = 8.5×11" = 2550×3300 px.
+// 4 cols × 3 rows. Gap between cells = 1/8" = 37.5 → 38px (gives room for crop marks).
+// Content block centred on sheet.
+const DPI       = 300;
+const CELL      = 600;           // 2" × 300 DPI
+const COLS      = 4;
+const ROWS      = 3;
+const SHEET_W   = Math.round(8.5 * DPI);   // 2550
+const SHEET_H   = Math.round(11  * DPI);   // 3300
+const GAP       = Math.round(0.125 * DPI); // 1/8" = 37px between cells
+const CONTENT_W = COLS * CELL + (COLS - 1) * GAP;
+const CONTENT_H = ROWS * CELL + (ROWS - 1) * GAP;
+const ORIGIN_X  = Math.round((SHEET_W - CONTENT_W) / 2);
+const ORIGIN_Y  = Math.round((SHEET_H - CONTENT_H) / 2);
+
+// Crop mark settings
+const MARK_LEN   = Math.round(0.125 * DPI); // how far the tick extends outside the cell (1/8")
+const MARK_GAP   = Math.round(0.03  * DPI); // small gap between cell edge and start of tick (about 9px)
+const MARK_WIDTH = 1.5;                      // stroke width in px
+const MARK_COLOR = '#222222';                // near-black
 
 // ── State ────────────────────────────────────────────────────────────────────
-let slotImages    = new Array(TOTAL_SLOTS).fill(null); // base64 jpeg strings (600×600)
+let slotImages      = new Array(TOTAL_SLOTS).fill(null);
 let activeSlotIndex = null;
-let modalCropper  = null;
+let modalCropper    = null;
 
 // ── DOM refs ─────────────────────────────────────────────────────────────────
-const uploadScreen    = document.getElementById('uploadScreen');
-const cropScreen      = document.getElementById('cropScreen');
-const sheetScreen     = document.getElementById('sheetScreen');
-const successScreen   = document.getElementById('successScreen');
-const imageInput      = document.getElementById('imageInput');
-const cropBtn         = document.getElementById('cropBtn');
-const uploadSubmitBtn = document.getElementById('uploadSubmitBtn');
-const resetBtn        = document.getElementById('resetBtn');
-const nameInput       = document.getElementById('nameInput');
-const sheetGrid       = document.getElementById('sheetGrid');
-const slotCountEl     = document.getElementById('slotCount');
+const uploadScreen     = document.getElementById('uploadScreen');
+const cropScreen       = document.getElementById('cropScreen');
+const sheetScreen      = document.getElementById('sheetScreen');
+const successScreen    = document.getElementById('successScreen');
+const imageInput       = document.getElementById('imageInput');
+const cropBtn          = document.getElementById('cropBtn');
+const uploadSubmitBtn  = document.getElementById('uploadSubmitBtn');
+const resetBtn         = document.getElementById('resetBtn');
+const nameInput        = document.getElementById('nameInput');
+const sheetGrid        = document.getElementById('sheetGrid');
+const slotCountEl      = document.getElementById('slotCount');
 const cropModalOverlay = document.getElementById('cropModalOverlay');
 const cropModalImg     = document.getElementById('cropModalImg');
 const cropModalConfirm = document.getElementById('cropModalConfirm');
 const cropModalCancel  = document.getElementById('cropModalCancel');
 
-// ── Build slot grid ──────────────────────────────────────────────────────────
+// ── Grid ─────────────────────────────────────────────────────────────────────
 function buildGrid() {
   sheetGrid.innerHTML = '';
   slotImages.forEach((img, i) => {
@@ -82,7 +88,6 @@ function buildGrid() {
   const filled = slotImages.filter(Boolean).length;
   slotCountEl.textContent = filled;
 
-  // Show generate button as soon as at least 1 slot is filled
   if (filled >= 1) {
     cropBtn.classList.remove('hidden');
     cropBtn.textContent = `Generate sheet (${filled} photo${filled === 1 ? '' : 's'}) →`;
@@ -92,7 +97,7 @@ function buildGrid() {
   }
 }
 
-// ── Slot picker ──────────────────────────────────────────────────────────────
+// ── Slot picker ───────────────────────────────────────────────────────────────
 const slotFileInput = document.createElement('input');
 slotFileInput.type = 'file';
 slotFileInput.accept = 'image/*';
@@ -113,14 +118,14 @@ slotFileInput.addEventListener('change', function(e) {
   reader.readAsDataURL(file);
 });
 
-// ── Crop modal ───────────────────────────────────────────────────────────────
+// ── Crop modal ────────────────────────────────────────────────────────────────
 function openCropModal(src, slotIndex) {
   cropModalImg.src = src;
   cropModalOverlay.classList.add('active');
   activeSlotIndex = slotIndex;
   if (modalCropper) modalCropper.destroy();
   modalCropper = new Cropper(cropModalImg, {
-    aspectRatio: 1,       // enforces square crop
+    aspectRatio: 1,
     viewMode: 1,
     autoCropArea: 0.9,
     responsive: true,
@@ -130,7 +135,6 @@ function openCropModal(src, slotIndex) {
 
 cropModalConfirm.addEventListener('click', function() {
   if (!modalCropper) return;
-  // getCroppedCanvas with equal width+height guarantees a perfect square
   const canvas = modalCropper.getCroppedCanvas({
     width: CELL,
     height: CELL,
@@ -151,7 +155,7 @@ function closeCropModal() {
   cropModalImg.src = '';
 }
 
-// ── First upload → enter sheet builder ──────────────────────────────────────
+// ── First upload ──────────────────────────────────────────────────────────────
 imageInput.addEventListener('change', function(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -165,7 +169,37 @@ imageInput.addEventListener('change', function(e) {
   reader.readAsDataURL(file);
 });
 
-// ── Generate sheet ───────────────────────────────────────────────────────────
+// ── Draw L-shaped crop marks around a cell ────────────────────────────────────
+// (x, y) = top-left corner of the cell on the canvas
+function drawCropMarks(ctx, x, y) {
+  ctx.save();
+  ctx.strokeStyle = MARK_COLOR;
+  ctx.lineWidth   = MARK_WIDTH;
+  ctx.setLineDash([]);  // solid lines
+
+  const s = MARK_GAP;   // gap between cell edge and tick start
+  const e = s + MARK_LEN; // how far the tick extends beyond cell
+
+  // Top-left corner
+  ctx.beginPath(); ctx.moveTo(x - e, y); ctx.lineTo(x - s, y); ctx.stroke(); // horizontal
+  ctx.beginPath(); ctx.moveTo(x, y - e); ctx.lineTo(x, y - s); ctx.stroke(); // vertical
+
+  // Top-right corner
+  ctx.beginPath(); ctx.moveTo(x + CELL + s, y); ctx.lineTo(x + CELL + e, y); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x + CELL, y - e); ctx.lineTo(x + CELL, y - s); ctx.stroke();
+
+  // Bottom-left corner
+  ctx.beginPath(); ctx.moveTo(x - e, y + CELL); ctx.lineTo(x - s, y + CELL); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x, y + CELL + s); ctx.lineTo(x, y + CELL + e); ctx.stroke();
+
+  // Bottom-right corner
+  ctx.beginPath(); ctx.moveTo(x + CELL + s, y + CELL); ctx.lineTo(x + CELL + e, y + CELL); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x + CELL, y + CELL + s); ctx.lineTo(x + CELL, y + CELL + e); ctx.stroke();
+
+  ctx.restore();
+}
+
+// ── Generate sheet ────────────────────────────────────────────────────────────
 cropBtn.addEventListener('click', function() {
   const filled = slotImages.filter(Boolean).length;
   if (filled < 1) return;
@@ -178,60 +212,47 @@ cropBtn.addEventListener('click', function() {
   canvas.height = SHEET_H;
   const ctx = canvas.getContext('2d');
 
-  // White sheet background
+  // White sheet
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, SHEET_W, SHEET_H);
 
-  // Count how many images we need to load (skip empty slots)
-  const toLoad = slotImages.filter(Boolean).length;
-  let loaded = 0;
+  // Draw all crop marks first (so they sit under the photos on filled slots)
+  for (let i = 0; i < TOTAL_SLOTS; i++) {
+    const col = i % COLS;
+    const row = Math.floor(i / COLS);
+    const x = ORIGIN_X + col * (CELL + GAP);
+    const y = ORIGIN_Y + row * (CELL + GAP);
+    drawCropMarks(ctx, x, y);
+  }
 
+  const toLoad = slotImages.filter(Boolean).length;
+  if (toLoad === 0) { finishSheet(canvas); return; }
+
+  let loaded = 0;
   slotImages.forEach((b64, i) => {
+    if (!b64) return;
     const col = i % COLS;
     const row = Math.floor(i / COLS);
     const x = ORIGIN_X + col * (CELL + GAP);
     const y = ORIGIN_Y + row * (CELL + GAP);
 
-    // Draw dashed cut guide for every slot (filled or empty)
-    ctx.save();
-    ctx.strokeStyle = '#cccccc';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([8, 6]);
-    ctx.strokeRect(x, y, CELL, CELL);
-    ctx.restore();
-
-    if (!b64) {
-      // Empty slot — leave white
-      return;
-    }
-
     const img = new Image();
     img.onload = function() {
-      // Draw strictly into the CELL×CELL square — no stretching possible
+      // Draw photo (exactly CELL×CELL — guaranteed square from cropper)
       ctx.drawImage(img, x, y, CELL, CELL);
 
-      // Re-draw cut guide on top so it's always visible
-      ctx.save();
-      ctx.strokeStyle = '#cccccc';
-      ctx.lineWidth = 2;
-      ctx.setLineDash([8, 6]);
-      ctx.strokeRect(x, y, CELL, CELL);
-      ctx.restore();
+      // Re-draw crop marks on top so they remain visible over the photo edge
+      drawCropMarks(ctx, x, y);
 
       loaded++;
       if (loaded === toLoad) finishSheet(canvas);
     };
     img.src = 'data:image/jpeg;base64,' + b64;
   });
-
-  // Edge case: somehow toLoad === 0 (shouldn't happen, but safety net)
-  if (toLoad === 0) finishSheet(canvas);
 });
 
 function finishSheet(canvas) {
-  const base64 = canvas.toDataURL('image/jpeg', 0.95).split(',')[1];
-  window._sheetBase64 = base64;
-
+  window._sheetBase64 = canvas.toDataURL('image/jpeg', 0.95).split(',')[1];
   sheetScreen.classList.add('hidden');
   sheetScreen.style.display = '';
   successScreen.classList.remove('hidden');
@@ -240,7 +261,7 @@ function finishSheet(canvas) {
   cropBtn.disabled = false;
 }
 
-// ── Upload ───────────────────────────────────────────────────────────────────
+// ── Upload ────────────────────────────────────────────────────────────────────
 uploadSubmitBtn.addEventListener('click', function() {
   if (!window._sheetBase64) return;
   uploadSubmitBtn.disabled = true;
@@ -272,7 +293,7 @@ uploadSubmitBtn.addEventListener('click', function() {
     });
 });
 
-// ── Reset ────────────────────────────────────────────────────────────────────
+// ── Reset ─────────────────────────────────────────────────────────────────────
 resetBtn.addEventListener('click', function() {
   slotImages = new Array(TOTAL_SLOTS).fill(null);
   window._sheetBase64 = null;
