@@ -382,6 +382,116 @@
       letter-spacing: 0.05em;
     }
 
+    /* ── Sheet builder ── */
+    #sheetScreen { width: 100%; display: none; flex-direction: column; align-items: center; gap: 16px; }
+    .sheet-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      width: 100%;
+    }
+    .slot {
+      aspect-ratio: 1;
+      border: 2px dashed var(--border);
+      border-radius: 6px;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.15s;
+    }
+    .slot:hover { border-color: var(--accent); }
+    .slot.filled { border-style: solid; border-color: var(--accent); }
+    .slot img {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      border-radius: 4px;
+    }
+    .slot-num {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--ink-dim);
+      line-height: 1;
+    }
+    .slot-plus {
+      font-size: 20px;
+      color: var(--border);
+      margin-bottom: 2px;
+    }
+    .slot.filled .slot-num,
+    .slot.filled .slot-plus { display: none; }
+    .slot-remove {
+      position: absolute;
+      top: 3px; right: 3px;
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.55);
+      color: #fff;
+      font-size: 11px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border: none;
+      line-height: 1;
+      z-index: 2;
+    }
+    .slot.filled .slot-remove { display: flex; }
+    .sheet-hint {
+      font-size: 12px;
+      color: var(--ink-dim);
+      text-align: center;
+    }
+    .sheet-progress {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink-mid);
+      text-align: center;
+    }
+    .sheet-progress span { color: var(--accent); }
+
+    /* ── Crop overlay modal ── */
+    .crop-modal-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .crop-modal-overlay.active { display: flex; }
+    .crop-modal {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 20px;
+      width: 100%;
+      max-width: 420px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .crop-modal-title {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 17px;
+      color: var(--ink);
+      text-align: center;
+    }
+    .crop-modal-frame {
+      width: 100%;
+      aspect-ratio: 1;
+      background: var(--ink);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+    }
+    .crop-modal-actions { display: flex; gap: 10px; }
+    .crop-modal-actions .btn { flex: 1; }
+
     /* ── Reduced motion ── */
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { transition: none !important; animation: none !important; }
@@ -448,7 +558,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
           </svg>
         </div>
-        <span class="how-label">Upload</span>
+        <span class="how-label">Photos</span>
       </div>
       <span class="how-arrow">›</span>
       <div class="how-step">
@@ -458,6 +568,18 @@
           </svg>
         </div>
         <span class="how-label">Crop</span>
+      </div>
+      <span class="how-arrow">›</span>
+      <div class="how-step">
+        <div class="how-icon">
+          <svg fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+            <rect x="3" y="3" width="7" height="7" rx="1" stroke-linecap="round" stroke-linejoin="round"/>
+            <rect x="14" y="3" width="7" height="7" rx="1" stroke-linecap="round" stroke-linejoin="round"/>
+            <rect x="3" y="14" width="7" height="7" rx="1" stroke-linecap="round" stroke-linejoin="round"/>
+            <rect x="14" y="14" width="7" height="7" rx="1" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <span class="how-label">Sheet</span>
       </div>
       <span class="how-arrow">›</span>
       <div class="how-step">
@@ -474,7 +596,7 @@
       <div class="card">
         <div class="card-body">
 
-          <!-- Upload -->
+          <!-- Screen 1: Upload first photo -->
           <div id="uploadScreen">
             <label class="drop-zone">
               <div class="drop-icon">
@@ -489,7 +611,7 @@
             </label>
           </div>
 
-          <!-- Crop -->
+          <!-- Screen 2: Crop (inline, hidden when modal is used) -->
           <div id="cropScreen" class="hidden">
             <div class="crop-frame">
               <img id="imageToCrop">
@@ -497,14 +619,22 @@
             <p class="crop-hint">Drag to position · pinch or scroll to resize</p>
           </div>
 
-          <!-- Success -->
+          <!-- Screen 3: Sheet builder -->
+          <div id="sheetScreen" class="hidden">
+            <div class="sheet-progress">Sheet: <span id="slotCount">0</span> / 12 photos</div>
+            <div class="sheet-grid" id="sheetGrid"></div>
+            <p class="sheet-hint">Tap any empty slot to add a photo. Fill all 12 to generate your print sheet.</p>
+          </div>
+
+          <!-- Screen 4: Submit -->
           <div id="successScreen" class="hidden">
             <div class="success-icon">
               <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
               </svg>
             </div>
-            <h2 class="success-title">Photo locked in</h2>
+            <h2 class="success-title">Sheet ready to print</h2>
+            <p style="font-size:13px;color:var(--ink-dim);text-align:center;margin-bottom:16px;">12 magnets · 8.5×11" at 300 DPI</p>
 
             <input type="text" id="nameInput" placeholder="Enter your name" style="
               width: 100%;
@@ -518,7 +648,7 @@
               outline: none;
             ">
             <button id="uploadSubmitBtn" class="btn btn-dark">
-              Upload to Google Drive
+              Upload sheet to Google Drive
             </button>
             <button id="resetBtn" class="btn btn-ghost">← Start over</button>
           </div>
@@ -530,7 +660,8 @@
           <div class="step-pip active" id="pip1"></div>
           <div class="step-pip"       id="pip2"></div>
           <div class="step-pip"       id="pip3"></div>
-          <span class="step-label" id="stepLabel">Step 1 of 3 — Choose photo</span>
+          <div class="step-pip"       id="pip4"></div>
+          <span class="step-label" id="stepLabel">Step 1 of 4 — Choose photo</span>
         </div>
       </div>
     </main>
@@ -544,6 +675,20 @@
     </button>
   </footer>
 
+  <!-- Crop modal for sheet slots -->
+  <div class="crop-modal-overlay" id="cropModalOverlay">
+    <div class="crop-modal">
+      <p class="crop-modal-title">Crop photo</p>
+      <div class="crop-modal-frame">
+        <img id="cropModalImg">
+      </div>
+      <div class="crop-modal-actions">
+        <button class="btn btn-ghost" id="cropModalCancel">Cancel</button>
+        <button class="btn btn-primary" id="cropModalConfirm">Use this crop</button>
+      </div>
+    </div>
+  </div>
+
   <div class="page-footer">© Snap &amp; Stick Magnet Co. · All rights reserved</div>
 
   <script src="app.js"></script>
@@ -552,20 +697,27 @@
     const pip1 = document.getElementById('pip1');
     const pip2 = document.getElementById('pip2');
     const pip3 = document.getElementById('pip3');
+    const pip4 = document.getElementById('pip4');
     const stepLabel = document.getElementById('stepLabel');
 
     function setStep(n) {
-      [pip1, pip2, pip3].forEach((p, i) => p.classList.toggle('active', i < n));
-      const labels = ['Step 1 of 3 — Choose photo', 'Step 2 of 3 — Crop image', 'Step 3 of 3 — Ready to upload'];
+      [pip1, pip2, pip3, pip4].forEach((p, i) => p.classList.toggle('active', i < n));
+      const labels = [
+        'Step 1 of 4 — Choose a photo',
+        'Step 2 of 4 — Crop image',
+        'Step 3 of 4 — Build your sheet',
+        'Step 4 of 4 — Ready to upload'
+      ];
       stepLabel.textContent = labels[n - 1] || '';
     }
 
     const observer = new MutationObserver(() => {
-      const upload  = document.getElementById('uploadScreen');
-      const crop    = document.getElementById('cropScreen');
       const success = document.getElementById('successScreen');
-      if (success && success.style.display !== 'none' && !success.classList.contains('hidden')) setStep(3);
-      else if (crop && crop.style.display !== 'none' && !crop.classList.contains('hidden')) setStep(2);
+      const sheet   = document.getElementById('sheetScreen');
+      const crop    = document.getElementById('cropScreen');
+      if (success && !success.classList.contains('hidden')) setStep(4);
+      else if (sheet && !sheet.classList.contains('hidden')) setStep(3);
+      else if (crop && !crop.classList.contains('hidden')) setStep(2);
       else setStep(1);
     });
     observer.observe(document.querySelector('.card-body'), { childList: false, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
