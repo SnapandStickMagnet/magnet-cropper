@@ -4,27 +4,27 @@ const AUTH_PASSWORD = new URLSearchParams(window.location.search).get('pwd') || 
 const TOTAL_SLOTS = 12;
 
 // ── Sheet geometry ────────────────────────────────────────────────────────────
-// Each cell = exactly 2×2" = 600×600 px at 300 DPI.
+// Each cell = exactly 50×50mm at 300 DPI.
+// 50mm × (300 / 25.4) = 590.55 → 591px
 // Sheet = 8.5×11" = 2550×3300 px.
-// 4 cols × 3 rows. Gap between cells = 1/8" = 37.5 → 38px (gives room for crop marks).
-// Content block centred on sheet.
-const DPI       = 300;
-const CELL      = 600;           // 2" × 300 DPI
-const COLS      = 4;
-const ROWS      = 3;
-const SHEET_W   = Math.round(8.5 * DPI);   // 2550
-const SHEET_H   = Math.round(11  * DPI);   // 3300
-const GAP       = Math.round(0.125 * DPI); // 1/8" = 37px between cells
-const CONTENT_W = COLS * CELL + (COLS - 1) * GAP;
-const CONTENT_H = ROWS * CELL + (ROWS - 1) * GAP;
-const ORIGIN_X  = Math.round((SHEET_W - CONTENT_W) / 2);
-const ORIGIN_Y  = Math.round((SHEET_H - CONTENT_H) / 2);
-
-// Crop mark settings
-const MARK_LEN   = Math.round(0.125 * DPI); // how far the tick extends outside the cell (1/8")
-const MARK_GAP   = Math.round(0.03  * DPI); // small gap between cell edge and start of tick (about 9px)
-const MARK_WIDTH = 1.5;                      // stroke width in px
-const MARK_COLOR = '#222222';                // near-black
+// 4 cols × 3 rows. Gap between cells = ~3mm = 35px.
+// BORDER: thin solid grey line drawn right on each cell edge as cut guide.
+// ROUNDED CORNERS: clipped to match the Chinese 50mm press radius (~3mm).
+const DPI         = 300;
+const MM_TO_PX    = DPI / 25.4;              // 11.811 px per mm
+const CELL        = Math.round(50 * MM_TO_PX); // 591px — exactly 50mm
+const COLS        = 4;
+const ROWS        = 3;
+const SHEET_W     = Math.round(8.5 * DPI);   // 2550
+const SHEET_H     = Math.round(11  * DPI);   // 3300
+const GAP         = Math.round(3 * MM_TO_PX);  // 3mm gap between cells = 35px
+const CONTENT_W   = COLS * CELL + (COLS - 1) * GAP;
+const CONTENT_H   = ROWS * CELL + (ROWS - 1) * GAP;
+const ORIGIN_X    = Math.round((SHEET_W - CONTENT_W) / 2);
+const ORIGIN_Y    = Math.round((SHEET_H - CONTENT_H) / 2);
+const CORNER_R    = Math.round(3 * MM_TO_PX); // 3mm radius = 35px — standard Chinese 50mm press
+const BORDER_W    = 3;    // border stroke width in px
+const BORDER_COLOR = '#aaaaaa'; // light grey border — matches Still Magnets style
 
 // ── State ────────────────────────────────────────────────────────────────────
 let slotImages      = new Array(TOTAL_SLOTS).fill(null);
@@ -136,7 +136,7 @@ function openCropModal(src, slotIndex) {
 cropModalConfirm.addEventListener('click', function() {
   if (!modalCropper) return;
   const canvas = modalCropper.getCroppedCanvas({
-    width: CELL,
+    width: CELL,   // 591px = exactly 50mm at 300 DPI
     height: CELL,
     imageSmoothingEnabled: true,
     imageSmoothingQuality: 'high',
@@ -169,32 +169,39 @@ imageInput.addEventListener('change', function(e) {
   reader.readAsDataURL(file);
 });
 
-// ── Draw L-shaped crop marks around a cell ────────────────────────────────────
-// (x, y) = top-left corner of the cell on the canvas
-function drawCropMarks(ctx, x, y) {
+// ── Draw a rounded-rect path helper ─────────────────────────────────────────
+function roundedRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.arcTo(x + w, y,     x + w, y + r,     r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+  ctx.lineTo(x + r, y + h);
+  ctx.arcTo(x, y + h, x, y + h - r, r);
+  ctx.lineTo(x, y + r);
+  ctx.arcTo(x, y,     x + r, y,     r);
+  ctx.closePath();
+}
+
+// ── Draw one cell: photo clipped to rounded rect + border on top ─────────────
+function drawCell(ctx, img, x, y) {
   ctx.save();
-  ctx.strokeStyle = MARK_COLOR;
-  ctx.lineWidth   = MARK_WIDTH;
-  ctx.setLineDash([]);  // solid lines
 
-  const s = MARK_GAP;   // gap between cell edge and tick start
-  const e = s + MARK_LEN; // how far the tick extends beyond cell
+  if (img) {
+    // Clip to rounded rect then draw photo
+    roundedRect(ctx, x, y, CELL, CELL, CORNER_R);
+    ctx.clip();
+    ctx.drawImage(img, x, y, CELL, CELL);
+    ctx.restore();
+    ctx.save();
+  }
 
-  // Top-left corner
-  ctx.beginPath(); ctx.moveTo(x - e, y); ctx.lineTo(x - s, y); ctx.stroke(); // horizontal
-  ctx.beginPath(); ctx.moveTo(x, y - e); ctx.lineTo(x, y - s); ctx.stroke(); // vertical
-
-  // Top-right corner
-  ctx.beginPath(); ctx.moveTo(x + CELL + s, y); ctx.lineTo(x + CELL + e, y); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(x + CELL, y - e); ctx.lineTo(x + CELL, y - s); ctx.stroke();
-
-  // Bottom-left corner
-  ctx.beginPath(); ctx.moveTo(x - e, y + CELL); ctx.lineTo(x - s, y + CELL); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(x, y + CELL + s); ctx.lineTo(x, y + CELL + e); ctx.stroke();
-
-  // Bottom-right corner
-  ctx.beginPath(); ctx.moveTo(x + CELL + s, y + CELL); ctx.lineTo(x + CELL + e, y + CELL); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(x + CELL, y + CELL + s); ctx.lineTo(x + CELL, y + CELL + e); ctx.stroke();
+  // Rounded border drawn OVER the photo (or on white for empty slots)
+  roundedRect(ctx, x, y, CELL, CELL, CORNER_R);
+  ctx.strokeStyle = BORDER_COLOR;
+  ctx.lineWidth   = BORDER_W;
+  ctx.stroke();
 
   ctx.restore();
 }
@@ -212,19 +219,22 @@ cropBtn.addEventListener('click', function() {
   canvas.height = SHEET_H;
   const ctx = canvas.getContext('2d');
 
-  // White sheet
+  // White sheet background
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, SHEET_W, SHEET_H);
 
-  // Draw all crop marks first (so they sit under the photos on filled slots)
+  // Draw empty slots immediately (white fill + border)
   for (let i = 0; i < TOTAL_SLOTS; i++) {
-    const col = i % COLS;
-    const row = Math.floor(i / COLS);
-    const x = ORIGIN_X + col * (CELL + GAP);
-    const y = ORIGIN_Y + row * (CELL + GAP);
-    drawCropMarks(ctx, x, y);
+    if (!slotImages[i]) {
+      const col = i % COLS;
+      const row = Math.floor(i / COLS);
+      const x   = ORIGIN_X + col * (CELL + GAP);
+      const y   = ORIGIN_Y + row * (CELL + GAP);
+      drawCell(ctx, null, x, y);
+    }
   }
 
+  // Load and draw filled slots
   const toLoad = slotImages.filter(Boolean).length;
   if (toLoad === 0) { finishSheet(canvas); return; }
 
@@ -233,17 +243,12 @@ cropBtn.addEventListener('click', function() {
     if (!b64) return;
     const col = i % COLS;
     const row = Math.floor(i / COLS);
-    const x = ORIGIN_X + col * (CELL + GAP);
-    const y = ORIGIN_Y + row * (CELL + GAP);
+    const x   = ORIGIN_X + col * (CELL + GAP);
+    const y   = ORIGIN_Y + row * (CELL + GAP);
 
     const img = new Image();
     img.onload = function() {
-      // Draw photo (exactly CELL×CELL — guaranteed square from cropper)
-      ctx.drawImage(img, x, y, CELL, CELL);
-
-      // Re-draw crop marks on top so they remain visible over the photo edge
-      drawCropMarks(ctx, x, y);
-
+      drawCell(ctx, img, x, y);
       loaded++;
       if (loaded === toLoad) finishSheet(canvas);
     };
