@@ -99,7 +99,7 @@ function buildGrid() {
 
   if (filled >= 1) {
     cropBtn.classList.remove('hidden');
-    cropBtn.textContent = `Submit Photos (${filled} selected) →`;
+    cropBtn.textContent = `Select Photos (${filled} chosen) →`;
     cropBtn.className = 'btn btn-primary';
   } else {
     cropBtn.classList.add('hidden');
@@ -309,22 +309,26 @@ function finishSheet(canvas) {
 uploadSubmitBtn.addEventListener('click', function() {
   if (!window._sheetBase64) return;
 
-  // Validate required fields
   const name  = nameInput.value.trim();
   const phone = phoneInput.value.trim();
   const email = emailInput.value.trim();
-  let valid = true;
+  const formError = document.getElementById('formError');
 
+  // Clear previous invalid states
   [nameInput, phoneInput, emailInput].forEach(el => el.classList.remove('invalid'));
+  formError.style.display = 'none';
 
-  if (!name)  { nameInput.classList.add('invalid');  valid = false; }
-  if (!phone) { phoneInput.classList.add('invalid'); valid = false; }
+  // Validate — all three required
+  let valid = true;
+  if (!name)                        { nameInput.classList.add('invalid');  valid = false; }
+  if (!phone)                       { phoneInput.classList.add('invalid'); valid = false; }
   if (!email || !email.includes('@')) { emailInput.classList.add('invalid'); valid = false; }
 
   if (!valid) {
-    uploadSubmitBtn.innerText = 'Please fill in all required fields';
-    setTimeout(() => { uploadSubmitBtn.innerText = 'Submit Photos'; }, 2500);
-    return;
+    formError.style.display = 'block';
+    // Scroll error into view on mobile
+    formError.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    return; // hard stop — do not proceed
   }
 
   uploadSubmitBtn.disabled = true;
@@ -333,7 +337,7 @@ uploadSubmitBtn.addEventListener('click', function() {
 
   const payload = new FormData();
   payload.append('base64Data', window._sheetBase64);
-  payload.append('pwd', AUTH_PASSWORD);
+  payload.append('pwd',   AUTH_PASSWORD);
   payload.append('name',  name);
   payload.append('phone', phone);
   payload.append('email', email);
@@ -343,7 +347,7 @@ uploadSubmitBtn.addEventListener('click', function() {
     .then(r => r.json())
     .then(data => {
       if (data.status === 'success') {
-        uploadSubmitBtn.innerText = 'Photos submitted ✓';
+        uploadSubmitBtn.innerText = 'Photos Submitted ✓';
         uploadSubmitBtn.className = 'btn btn-success';
       } else {
         uploadSubmitBtn.disabled = false;
@@ -370,6 +374,7 @@ resetBtn.addEventListener('click', function() {
   emailInput.value = '';
   notesInput.value = '';
   [nameInput, phoneInput, emailInput].forEach(el => el.classList.remove('invalid'));
+  document.getElementById('formError').style.display = 'none';
   uploadSubmitBtn.disabled = false;
   uploadSubmitBtn.innerText = 'Submit Photos';
   uploadSubmitBtn.className = 'btn btn-dark';

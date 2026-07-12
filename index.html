@@ -504,6 +504,11 @@
       gap: 10px;
       margin-bottom: 16px;
     }
+    .contact-row {
+      display: flex;
+      gap: 10px;
+    }
+    .contact-row input { flex: 1; min-width: 0; }
     .contact-form input,
     .contact-form textarea {
       width: 100%;
@@ -628,10 +633,15 @@
             <p style="font-size:13px;color:var(--ink-dim);text-align:center;margin-bottom:20px;">Fill in your details below to submit.</p>
 
             <div class="contact-form">
-              <input type="text" id="nameInput" placeholder="Full name *" required>
-              <input type="tel"  id="phoneInput" placeholder="Phone number *" required>
-              <input type="email" id="emailInput" placeholder="Email address *" required>
+              <input type="text" id="nameInput" placeholder="Full name *" autocomplete="name">
+              <div class="contact-row">
+                <input type="tel"   id="phoneInput" placeholder="Phone *" autocomplete="tel">
+                <input type="email" id="emailInput" placeholder="Email *" autocomplete="email">
+              </div>
               <textarea id="notesInput" placeholder="Any notes or special requests (optional)" rows="3"></textarea>
+              <p id="formError" style="display:none;color:var(--danger);font-size:13px;font-weight:500;">
+                Please fill in all required fields (marked *).
+              </p>
             </div>
 
             <button id="uploadSubmitBtn" class="btn btn-dark">
@@ -654,10 +664,10 @@
 
   </div>
 
-  <!-- Sticky crop button -->
+  <!-- Sticky submit button -->
   <footer class="site-footer" style="padding-left:20px;padding-right:20px;">
     <button id="cropBtn" class="btn btn-primary hidden">
-      Lock layout &amp; crop
+      Select Photos
     </button>
   </footer>
 
