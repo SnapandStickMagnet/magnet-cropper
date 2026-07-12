@@ -23,8 +23,14 @@ const CONTENT_H   = ROWS * CELL + (ROWS - 1) * GAP;
 const ORIGIN_X    = Math.round((SHEET_W - CONTENT_W) / 2);
 const ORIGIN_Y    = Math.round((SHEET_H - CONTENT_H) / 2);
 const CORNER_R    = Math.round(3 * MM_TO_PX); // 3mm radius = 35px — standard Chinese 50mm press
-const BORDER_W    = 3;    // border stroke width in px
-const BORDER_COLOR = '#aaaaaa'; // light grey border — matches Still Magnets style
+const BORDER_W    = 5;                         // thicker border = more visible cut line
+const BORDER_COLOR = '#555555';                // darker grey — clearer cut guide
+
+// Tick marks: short lines extending outside each cell corner into the gap
+const TICK_LEN  = Math.round(2.5 * MM_TO_PX); // 2.5mm tick length
+const TICK_GAP  = Math.round(0.8 * MM_TO_PX); // small gap between photo edge and tick start
+const TICK_W    = 2.5;
+const TICK_COLOR = '#333333';
 
 // ── State ────────────────────────────────────────────────────────────────────
 let slotImages      = new Array(TOTAL_SLOTS).fill(null);
@@ -41,6 +47,9 @@ const cropBtn          = document.getElementById('cropBtn');
 const uploadSubmitBtn  = document.getElementById('uploadSubmitBtn');
 const resetBtn         = document.getElementById('resetBtn');
 const nameInput        = document.getElementById('nameInput');
+const phoneInput       = document.getElementById('phoneInput');
+const emailInput       = document.getElementById('emailInput');
+const notesInput       = document.getElementById('notesInput');
 const sheetGrid        = document.getElementById('sheetGrid');
 const slotCountEl      = document.getElementById('slotCount');
 const cropModalOverlay = document.getElementById('cropModalOverlay');
@@ -90,7 +99,7 @@ function buildGrid() {
 
   if (filled >= 1) {
     cropBtn.classList.remove('hidden');
-    cropBtn.textContent = `Generate sheet (${filled} photo${filled === 1 ? '' : 's'}) →`;
+    cropBtn.textContent = `Submit Photos (${filled} selected) →`;
     cropBtn.className = 'btn btn-primary';
   } else {
     cropBtn.classList.add('hidden');
@@ -184,7 +193,34 @@ function roundedRect(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
-// ── Draw one cell: photo clipped to rounded rect + border on top ─────────────
+// ── Draw corner tick cutting guides outside a cell ───────────────────────────
+// These extend into the gap area so you can see where to cut
+function drawCutTicks(ctx, x, y) {
+  ctx.save();
+  ctx.strokeStyle = TICK_COLOR;
+  ctx.lineWidth   = TICK_W;
+  ctx.setLineDash([]);
+
+  const s = TICK_GAP;           // gap from cell edge to tick start
+  const e = s + TICK_LEN;       // tick end distance from cell edge
+
+  // Top-left
+  ctx.beginPath(); ctx.moveTo(x - e, y); ctx.lineTo(x - s, y); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x, y - e); ctx.lineTo(x, y - s); ctx.stroke();
+  // Top-right
+  ctx.beginPath(); ctx.moveTo(x + CELL + s, y); ctx.lineTo(x + CELL + e, y); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x + CELL, y - e); ctx.lineTo(x + CELL, y - s); ctx.stroke();
+  // Bottom-left
+  ctx.beginPath(); ctx.moveTo(x - e, y + CELL); ctx.lineTo(x - s, y + CELL); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x, y + CELL + s); ctx.lineTo(x, y + CELL + e); ctx.stroke();
+  // Bottom-right
+  ctx.beginPath(); ctx.moveTo(x + CELL + s, y + CELL); ctx.lineTo(x + CELL + e, y + CELL); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x + CELL, y + CELL + s); ctx.lineTo(x + CELL, y + CELL + e); ctx.stroke();
+
+  ctx.restore();
+}
+
+// ── Draw one cell: photo clipped to rounded rect + thick border + tick marks ──
 function drawCell(ctx, img, x, y) {
   ctx.save();
 
@@ -197,13 +233,16 @@ function drawCell(ctx, img, x, y) {
     ctx.save();
   }
 
-  // Rounded border drawn OVER the photo (or on white for empty slots)
+  // Thick rounded border on top — this IS the cut line
   roundedRect(ctx, x, y, CELL, CELL, CORNER_R);
   ctx.strokeStyle = BORDER_COLOR;
   ctx.lineWidth   = BORDER_W;
   ctx.stroke();
 
   ctx.restore();
+
+  // Corner tick marks outside the cell in the gap area
+  drawCutTicks(ctx, x, y);
 }
 
 // ── Generate sheet ────────────────────────────────────────────────────────────
@@ -212,7 +251,7 @@ cropBtn.addEventListener('click', function() {
   if (filled < 1) return;
 
   cropBtn.disabled = true;
-  cropBtn.textContent = 'Building sheet…';
+  cropBtn.textContent = 'Preparing photos…';
 
   const canvas = document.createElement('canvas');
   canvas.width  = SHEET_W;
@@ -269,31 +308,53 @@ function finishSheet(canvas) {
 // ── Upload ────────────────────────────────────────────────────────────────────
 uploadSubmitBtn.addEventListener('click', function() {
   if (!window._sheetBase64) return;
+
+  // Validate required fields
+  const name  = nameInput.value.trim();
+  const phone = phoneInput.value.trim();
+  const email = emailInput.value.trim();
+  let valid = true;
+
+  [nameInput, phoneInput, emailInput].forEach(el => el.classList.remove('invalid'));
+
+  if (!name)  { nameInput.classList.add('invalid');  valid = false; }
+  if (!phone) { phoneInput.classList.add('invalid'); valid = false; }
+  if (!email || !email.includes('@')) { emailInput.classList.add('invalid'); valid = false; }
+
+  if (!valid) {
+    uploadSubmitBtn.innerText = 'Please fill in all required fields';
+    setTimeout(() => { uploadSubmitBtn.innerText = 'Submit Photos'; }, 2500);
+    return;
+  }
+
   uploadSubmitBtn.disabled = true;
-  uploadSubmitBtn.innerText = 'Uploading to Drive…';
+  uploadSubmitBtn.innerText = 'Submitting…';
   uploadSubmitBtn.className = 'btn btn-uploading';
 
   const payload = new FormData();
   payload.append('base64Data', window._sheetBase64);
   payload.append('pwd', AUTH_PASSWORD);
-  payload.append('name', nameInput.value.trim() || 'unknown');
+  payload.append('name',  name);
+  payload.append('phone', phone);
+  payload.append('email', email);
+  payload.append('notes', notesInput.value.trim());
 
   fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: payload, redirect: 'follow' })
     .then(r => r.json())
     .then(data => {
       if (data.status === 'success') {
-        uploadSubmitBtn.innerText = 'Upload complete — check Drive ✓';
+        uploadSubmitBtn.innerText = 'Photos submitted ✓';
         uploadSubmitBtn.className = 'btn btn-success';
       } else {
         uploadSubmitBtn.disabled = false;
-        uploadSubmitBtn.innerText = 'Upload failed — try again';
+        uploadSubmitBtn.innerText = 'Submission failed — try again';
         uploadSubmitBtn.className = 'btn btn-error';
       }
     })
     .catch(err => {
       console.error('Upload error:', err);
       uploadSubmitBtn.disabled = false;
-      uploadSubmitBtn.innerText = 'Upload failed — try again';
+      uploadSubmitBtn.innerText = 'Submission failed — try again';
       uploadSubmitBtn.className = 'btn btn-error';
     });
 });
@@ -305,8 +366,12 @@ resetBtn.addEventListener('click', function() {
   activeSlotIndex = null;
   imageInput.value = '';
   nameInput.value = '';
+  phoneInput.value = '';
+  emailInput.value = '';
+  notesInput.value = '';
+  [nameInput, phoneInput, emailInput].forEach(el => el.classList.remove('invalid'));
   uploadSubmitBtn.disabled = false;
-  uploadSubmitBtn.innerText = 'Upload sheet to Google Drive';
+  uploadSubmitBtn.innerText = 'Submit Photos';
   uploadSubmitBtn.className = 'btn btn-dark';
   successScreen.classList.add('hidden');
   successScreen.style.display = '';

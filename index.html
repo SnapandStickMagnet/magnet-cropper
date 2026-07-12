@@ -187,25 +187,29 @@
 
     .card-footer {
       border-top: 1px solid var(--border);
-      padding: 16px 24px;
+      padding: 14px 24px 12px;
       display: flex;
-      align-items: center;
-      gap: 12px;
+      flex-direction: column;
+      gap: 8px;
       background: var(--bg);
     }
-    .step-pip {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
+    .progress-wrap {
+      width: 100%;
+      height: 6px;
       background: var(--border);
-      transition: background 0.2s;
-      flex-shrink: 0;
+      border-radius: 99px;
+      overflow: hidden;
     }
-    .step-pip.active { background: var(--accent); }
+    .progress-bar {
+      height: 100%;
+      width: 25%;
+      background: var(--accent);
+      border-radius: 99px;
+      transition: width 0.35s ease;
+    }
     .step-label {
       font-size: 12px;
       color: var(--ink-mid);
-      margin-left: auto;
     }
 
     /* ── Upload screen ── */
@@ -393,7 +397,7 @@
     .slot {
       aspect-ratio: 1;
       border: 2px dashed var(--border);
-      border-radius: 6px;
+      border-radius: 18%;
       background: var(--bg);
       display: flex;
       flex-direction: column;
@@ -410,7 +414,7 @@
       position: absolute; inset: 0;
       width: 100%; height: 100%;
       object-fit: cover;
-      border-radius: 4px;
+      border-radius: 18%;
     }
     .slot-num {
       font-size: 11px;
@@ -492,6 +496,33 @@
     .crop-modal-actions { display: flex; gap: 10px; }
     .crop-modal-actions .btn { flex: 1; }
 
+    /* ── Contact form (step 4) ── */
+    .contact-form {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .contact-form input,
+    .contact-form textarea {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 15px;
+      font-family: inherit;
+      color: var(--ink);
+      background: var(--bg);
+      outline: none;
+      transition: border-color 0.15s;
+      resize: none;
+    }
+    .contact-form input:focus,
+    .contact-form textarea:focus { border-color: var(--accent); }
+    .contact-form input.invalid,
+    .contact-form textarea.invalid { border-color: var(--danger); }
+
     /* ── Reduced motion ── */
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { transition: none !important; animation: none !important; }
@@ -550,47 +581,7 @@
 
   <div class="shell">
 
-    <!-- How it works -->
-    <div class="how-strip">
-      <div class="how-step">
-        <div class="how-icon">
-          <svg fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-          </svg>
-        </div>
-        <span class="how-label">Photos</span>
-      </div>
-      <span class="how-arrow">›</span>
-      <div class="how-step">
-        <div class="how-icon">
-          <svg fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4 8V6a2 2 0 012-2h2M4 16v2a2 2 0 002 2h2m8-16h2a2 2 0 012 2v2m0 8v2a2 2 0 01-2 2h-2"/>
-          </svg>
-        </div>
-        <span class="how-label">Crop</span>
-      </div>
-      <span class="how-arrow">›</span>
-      <div class="how-step">
-        <div class="how-icon">
-          <svg fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
-            <rect x="3" y="3" width="7" height="7" rx="1" stroke-linecap="round" stroke-linejoin="round"/>
-            <rect x="14" y="3" width="7" height="7" rx="1" stroke-linecap="round" stroke-linejoin="round"/>
-            <rect x="3" y="14" width="7" height="7" rx="1" stroke-linecap="round" stroke-linejoin="round"/>
-            <rect x="14" y="14" width="7" height="7" rx="1" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </div>
-        <span class="how-label">Sheet</span>
-      </div>
-      <span class="how-arrow">›</span>
-      <div class="how-step">
-        <div class="how-icon">
-          <svg fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
-          </svg>
-        </div>
-        <span class="how-label">Submit</span>
-      </div>
-    </div>
+
 
     <main>
       <div class="card">
@@ -619,11 +610,11 @@
             <p class="crop-hint">Drag to position · pinch or scroll to resize</p>
           </div>
 
-          <!-- Screen 3: Sheet builder -->
+          <!-- Screen 3: Photo builder -->
           <div id="sheetScreen" class="hidden">
-            <div class="sheet-progress">Sheet: <span id="slotCount">0</span> / 12 photos</div>
+            <div class="sheet-progress">Photos selected: <span id="slotCount">0</span> / 12</div>
             <div class="sheet-grid" id="sheetGrid"></div>
-            <p class="sheet-hint">Tap any empty slot to add a photo. Fill all 12 to generate your print sheet.</p>
+            <p class="sheet-hint">Select up to 12 photos. Tap any slot to add or replace a photo.</p>
           </div>
 
           <!-- Screen 4: Submit -->
@@ -633,35 +624,30 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
               </svg>
             </div>
-            <h2 class="success-title">Sheet ready to print</h2>
-            <p style="font-size:13px;color:var(--ink-dim);text-align:center;margin-bottom:16px;">12 magnets · 8.5×11" at 300 DPI</p>
+            <h2 class="success-title">Photos ready!</h2>
+            <p style="font-size:13px;color:var(--ink-dim);text-align:center;margin-bottom:20px;">Fill in your details below to submit.</p>
 
-            <input type="text" id="nameInput" placeholder="Enter your name" style="
-              width: 100%;
-              padding: 12px 16px;
-              border: 1px solid var(--border);
-              border-radius: var(--radius-sm);
-              font-size: 15px;
-              color: var(--ink);
-              background: var(--bg);
-              margin-bottom: 12px;
-              outline: none;
-            ">
+            <div class="contact-form">
+              <input type="text" id="nameInput" placeholder="Full name *" required>
+              <input type="tel"  id="phoneInput" placeholder="Phone number *" required>
+              <input type="email" id="emailInput" placeholder="Email address *" required>
+              <textarea id="notesInput" placeholder="Any notes or special requests (optional)" rows="3"></textarea>
+            </div>
+
             <button id="uploadSubmitBtn" class="btn btn-dark">
-              Upload sheet to Google Drive
+              Submit Photos
             </button>
             <button id="resetBtn" class="btn btn-ghost">← Start over</button>
           </div>
 
         </div>
 
-        <!-- Card footer: step indicator -->
+        <!-- Card footer: progress bar -->
         <div class="card-footer">
-          <div class="step-pip active" id="pip1"></div>
-          <div class="step-pip"       id="pip2"></div>
-          <div class="step-pip"       id="pip3"></div>
-          <div class="step-pip"       id="pip4"></div>
-          <span class="step-label" id="stepLabel">Step 1 of 4 — Choose photo</span>
+          <div class="progress-wrap">
+            <div class="progress-bar" id="progressBar"></div>
+          </div>
+          <span class="step-label" id="stepLabel">Step 1 of 4 — Choose a photo</span>
         </div>
       </div>
     </main>
@@ -694,19 +680,16 @@
   <script src="app.js"></script>
 
   <script>
-    const pip1 = document.getElementById('pip1');
-    const pip2 = document.getElementById('pip2');
-    const pip3 = document.getElementById('pip3');
-    const pip4 = document.getElementById('pip4');
-    const stepLabel = document.getElementById('stepLabel');
+    const progressBar = document.getElementById('progressBar');
+    const stepLabel   = document.getElementById('stepLabel');
 
     function setStep(n) {
-      [pip1, pip2, pip3, pip4].forEach((p, i) => p.classList.toggle('active', i < n));
+      progressBar.style.width = (n / 4 * 100) + '%';
       const labels = [
         'Step 1 of 4 — Choose a photo',
-        'Step 2 of 4 — Crop image',
-        'Step 3 of 4 — Build your sheet',
-        'Step 4 of 4 — Ready to upload'
+        'Step 2 of 4 — Crop your photo',
+        'Step 3 of 4 — Select up to 12 photos',
+        'Step 4 of 4 — Enter your details'
       ];
       stepLabel.textContent = labels[n - 1] || '';
     }
