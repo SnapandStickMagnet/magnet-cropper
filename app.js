@@ -332,11 +332,17 @@ uploadSubmitBtn.addEventListener('click', function() {
   uploadSubmitBtn.className = 'btn btn-uploading';
 
   const payload = new FormData();
+  // Filename includes name + contact so it's visible directly in Google Drive
+  const safeName    = name.replace(/[^a-zA-Z0-9 _-]/g, '').trim();
+  const safeContact = contact.replace(/[^a-zA-Z0-9@._+-]/g, '').trim();
+  const timestamp   = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  const filename    = `${timestamp}_${safeName}_${safeContact}`;
   payload.append('base64Data', window._sheetBase64);
-  payload.append('pwd',     AUTH_PASSWORD);
-  payload.append('name',    name);
-  payload.append('contact', contact);
-  payload.append('notes',   notesInput.value.trim());
+  payload.append('pwd',      AUTH_PASSWORD);
+  payload.append('name',     name);
+  payload.append('contact',  contact);
+  payload.append('notes',    notesInput.value.trim());
+  payload.append('filename', filename);
 
   fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: payload, redirect: 'follow' })
     .then(r => r.json())
@@ -344,6 +350,7 @@ uploadSubmitBtn.addEventListener('click', function() {
       if (data.status === 'success') {
         uploadSubmitBtn.innerText = 'Photos Submitted ✓';
         uploadSubmitBtn.className = 'btn btn-success';
+        showConfettiPopup(name);
       } else {
         uploadSubmitBtn.disabled = false;
         uploadSubmitBtn.innerText = 'Submission failed — try again';
@@ -379,3 +386,94 @@ resetBtn.addEventListener('click', function() {
   cropBtn.classList.add('hidden');
   uploadScreen.classList.remove('hidden');
 });
+
+// ── Confetti popup ────────────────────────────────────────────────────────────
+function showConfettiPopup(name) {
+  const overlay = document.createElement('div');
+  overlay.id = 'confettiOverlay';
+  overlay.style.cssText = `
+    position:fixed;inset:0;z-index:999;
+    display:flex;align-items:center;justify-content:center;
+    background:rgba(0,0,0,0.55);padding:24px;
+  `;
+
+  const firstName = name.split(' ')[0] || 'there';
+
+  overlay.innerHTML = `
+    <div id="confettiBox" style="
+      background:#fff;border-radius:20px;
+      padding:36px 28px 32px;max-width:340px;width:100%;
+      text-align:center;position:relative;overflow:hidden;
+      box-shadow:0 24px 60px rgba(0,0,0,0.18);
+    ">
+      <canvas id="confettiCanvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;"></canvas>
+      <div style="font-size:52px;margin-bottom:12px;position:relative;z-index:1;">🎉</div>
+      <h2 style="font-family:Georgia,serif;font-size:22px;color:#17201F;margin-bottom:8px;position:relative;z-index:1;">
+        You're all set, ${firstName}!
+      </h2>
+      <p style="font-size:14px;color:#5A6360;line-height:1.6;margin-bottom:24px;position:relative;z-index:1;">
+        Your photos have been submitted successfully.<br>We'll be in touch soon with your magnet order!
+      </p>
+      <button id="confettiClose" style="
+        width:100%;padding:14px;border:none;border-radius:10px;
+        background:#1A6B5A;color:#fff;font-size:16px;font-weight:600;
+        cursor:pointer;position:relative;z-index:1;
+      ">Awesome, thanks! 🧲</button>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  // Kick off confetti before wiring events (so canvas is in DOM)
+  requestAnimationFrame(() => {
+    const canvas = document.getElementById('confettiCanvas');
+    const box    = document.getElementById('confettiBox');
+    if (!canvas || !box) return;
+    canvas.width  = box.offsetWidth;
+    canvas.height = box.offsetHeight;
+    const ctx = canvas.getContext('2d');
+
+    const COLORS = ['#1A6B5A','#F7C948','#E05C5C','#4A90D9','#9B59B6','#2ECC71','#F39C12','#ffffff'];
+    const pieces = Array.from({ length: 100 }, () => ({
+      x:  Math.random() * canvas.width,
+      y:  -20 - Math.random() * canvas.height * 0.6,
+      w:  6 + Math.random() * 8,
+      h:  10 + Math.random() * 6,
+      r:  Math.random() * Math.PI * 2,
+      dr: (Math.random() - 0.5) * 0.15,
+      dy: 2 + Math.random() * 4,
+      dx: (Math.random() - 0.5) * 2,
+      color: COLORS[Math.floor(Math.random() * COLORS.length)]
+    }));
+
+    let raf;
+    let active = true;
+
+    function tick() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      let anyVisible = false;
+      pieces.forEach(p => {
+        p.y += p.dy; p.x += p.dx; p.r += p.dr;
+        if (p.y < canvas.height + 20) anyVisible = true;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.r);
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = 0.9;
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx.restore();
+      });
+      if (active && anyVisible) raf = requestAnimationFrame(tick);
+    }
+    raf = requestAnimationFrame(tick);
+
+    function close() {
+      active = false;
+      cancelAnimationFrame(raf);
+      overlay.remove();
+    }
+
+    document.getElementById('confettiClose').addEventListener('click', close);
+    overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+  });
+}
