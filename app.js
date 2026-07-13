@@ -4,30 +4,22 @@ const AUTH_PASSWORD = new URLSearchParams(window.location.search).get('pwd') || 
 const TOTAL_SLOTS = 12;
 
 // ── Sheet geometry ────────────────────────────────────────────────────────────
-// Magnet face = 50×50mm. Press needs 3mm bleed each side to fold under the shell.
-// Print cell = 56×56mm (50mm + 3mm bleed each side) at 300 DPI.
-// 56mm × (300 / 25.4) = 661.4 → 661px per cell.
-// Cut guide border is drawn at the 50mm boundary (inset 3mm from cell edge).
-// Sheet = 8.5×11" = 2550×3300 px. 3 cols × 4 rows.
-// Gap between cells = 6mm = 71px.
 const DPI         = 300;
-const MM_TO_PX    = DPI / 25.4;                     // 11.811 px per mm
-const BLEED_MM    = 3;                               // 3mm bleed each side
-const MAGNET_MM   = 50;                              // actual magnet face
-const CELL_MM     = MAGNET_MM + BLEED_MM * 2;        // 56mm print cell
-const CELL        = Math.round(CELL_MM * MM_TO_PX);  // 661px
-const BLEED       = Math.round(BLEED_MM * MM_TO_PX); // 35px bleed offset
-const MAGNET_PX   = Math.round(MAGNET_MM * MM_TO_PX); // 591px — 50mm face
+const MM_TO_PX    = DPI / 25.4;
+const BLEED_MM    = 3;
+const MAGNET_MM   = 50;
+const CELL_MM     = MAGNET_MM + BLEED_MM * 2;
+const CELL        = Math.round(CELL_MM * MM_TO_PX);
 const COLS        = 3;
 const ROWS        = 4;
-const SHEET_W     = Math.round(8.5 * DPI);    // 2550
-const SHEET_H     = Math.round(11  * DPI);    // 3300
-const GAP         = Math.round(6 * MM_TO_PX); // 6mm gap = 71px
+const SHEET_W     = Math.round(8.5 * DPI);
+const SHEET_H     = Math.round(11  * DPI);
+const GAP         = Math.round(6 * MM_TO_PX);
 const CONTENT_W   = COLS * CELL + (COLS - 1) * GAP;
 const CONTENT_H   = ROWS * CELL + (ROWS - 1) * GAP;
 const ORIGIN_X    = Math.round((SHEET_W - CONTENT_W) / 2);
 const ORIGIN_Y    = Math.round((SHEET_H - CONTENT_H) / 2);
-const CORNER_R    = Math.round(1.5 * MM_TO_PX); // very subtle corner radius — square press
+const CORNER_R    = Math.round(1.5 * MM_TO_PX);
 const BORDER_W    = 3;
 const BORDER_COLOR = '#888888';
 
@@ -142,13 +134,13 @@ function openCropModal(src, slotIndex) {
 cropModalConfirm.addEventListener('click', function() {
   if (!modalCropper) return;
   const canvas = modalCropper.getCroppedCanvas({
-    width: CELL,   // 591px = exactly 50mm at 300 DPI
+    width: CELL,
     height: CELL,
     imageSmoothingEnabled: true,
     imageSmoothingQuality: 'high',
     fillColor: '#ffffff'
   });
-  slotImages[activeSlotIndex] = canvas.toDataURL('image/jpeg', 1.0).split(',')[1];
+  slotImages[activeSlotIndex] = canvas.toDataURL('image/jpeg', 0.92).split(',')[1];
   closeCropModal();
   buildGrid();
 });
@@ -175,7 +167,7 @@ imageInput.addEventListener('change', function(e) {
   reader.readAsDataURL(file);
 });
 
-// ── Draw a rounded-rect path helper ─────────────────────────────────────────
+// ── Draw helpers ──────────────────────────────────────────────────────────────
 function roundedRect(ctx, x, y, w, h, r) {
   ctx.beginPath();
   ctx.moveTo(x + r, y);
@@ -190,7 +182,6 @@ function roundedRect(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
-// ── Draw one cell: photo fills cell, dashed border on same edge ───────────────
 function drawCell(ctx, img, x, y) {
   ctx.save();
   roundedRect(ctx, x, y, CELL, CELL, CORNER_R);
@@ -202,7 +193,6 @@ function drawCell(ctx, img, x, y) {
     ctx.fillRect(x, y, CELL, CELL);
   }
   ctx.restore();
-
   ctx.save();
   roundedRect(ctx, x, y, CELL, CELL, CORNER_R);
   ctx.strokeStyle = BORDER_COLOR;
@@ -225,11 +215,9 @@ cropBtn.addEventListener('click', function() {
   canvas.height = SHEET_H;
   const ctx = canvas.getContext('2d');
 
-  // White sheet background
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, SHEET_W, SHEET_H);
 
-  // Draw empty slots immediately (white fill + border)
   for (let i = 0; i < TOTAL_SLOTS; i++) {
     if (!slotImages[i]) {
       const col = i % COLS;
@@ -240,7 +228,6 @@ cropBtn.addEventListener('click', function() {
     }
   }
 
-  // Load and draw filled slots
   const toLoad = slotImages.filter(Boolean).length;
   if (toLoad === 0) { finishSheet(canvas); return; }
 
@@ -251,7 +238,6 @@ cropBtn.addEventListener('click', function() {
     const row = Math.floor(i / COLS);
     const x   = ORIGIN_X + col * (CELL + GAP);
     const y   = ORIGIN_Y + row * (CELL + GAP);
-
     const img = new Image();
     img.onload = function() {
       drawCell(ctx, img, x, y);
@@ -263,8 +249,7 @@ cropBtn.addEventListener('click', function() {
 });
 
 function finishSheet(canvas) {
-  window._sheetCanvas  = canvas;
-  window._sheetBase64  = canvas.toDataURL('image/jpeg', 1.0).split(',')[1];
+  window._sheetBase64 = canvas.toDataURL('image/jpeg', 0.95).split(',')[1];
   sheetScreen.classList.add('hidden');
   sheetScreen.style.display = '';
   successScreen.classList.remove('hidden');
@@ -277,8 +262,8 @@ function finishSheet(canvas) {
 uploadSubmitBtn.addEventListener('click', function() {
   if (!window._sheetBase64) return;
 
-  const name    = nameInput.value.trim();
-  const contact = phoneInput.value.trim(); // email or phone
+  const name     = nameInput.value.trim();
+  const contact  = phoneInput.value.trim();
   const formError = document.getElementById('formError');
 
   [nameInput, phoneInput].forEach(el => el.classList.remove('invalid'));
@@ -310,23 +295,31 @@ uploadSubmitBtn.addEventListener('click', function() {
   payload.append('contact',  contact);
   payload.append('filename', filename);
 
-  // Fire and forget — we know the file reaches Drive regardless of CORS response
   fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: payload, redirect: 'follow' })
-    .catch(() => {}); // silently ignore any CORS/response errors
-
-  // Show success immediately after sending — no need to wait for response
-  setTimeout(() => {
-    uploadSubmitBtn.innerText = 'Photos Submitted ✓';
-    uploadSubmitBtn.className = 'btn btn-success';
-    showConfettiPopup(name);
-  }, 1500);
+    .then(r => r.json())
+    .then(data => {
+      if (data.status === 'success') {
+        uploadSubmitBtn.innerText = 'Photos Submitted ✓';
+        uploadSubmitBtn.className = 'btn btn-success';
+        showConfettiPopup(name);
+      } else {
+        uploadSubmitBtn.disabled = false;
+        uploadSubmitBtn.innerText = 'Submission failed — try again';
+        uploadSubmitBtn.className = 'btn btn-error';
+      }
+    })
+    .catch(err => {
+      console.error('Upload error:', err);
+      uploadSubmitBtn.disabled = false;
+      uploadSubmitBtn.innerText = 'Submission failed — try again';
+      uploadSubmitBtn.className = 'btn btn-error';
+    });
 });
 
 // ── Reset ─────────────────────────────────────────────────────────────────────
 resetBtn.addEventListener('click', function() {
   slotImages = new Array(TOTAL_SLOTS).fill(null);
-  window._sheetBase64  = null;
-  window._sheetCanvas  = null;
+  window._sheetBase64 = null;
   activeSlotIndex = null;
   imageInput.value = '';
   nameInput.value = '';
@@ -381,7 +374,6 @@ function showConfettiPopup(name) {
 
   document.body.appendChild(overlay);
 
-  // Kick off confetti before wiring events (so canvas is in DOM)
   requestAnimationFrame(() => {
     const canvas = document.getElementById('confettiCanvas');
     const box    = document.getElementById('confettiBox');
@@ -391,19 +383,17 @@ function showConfettiPopup(name) {
     const ctx = canvas.getContext('2d');
 
     const COLORS = ['#1A6B5A','#F7C948','#E05C5C','#4A90D9','#9B59B6','#2ECC71','#F39C12','#ffffff','#FF69B4','#00CED1'];
-
-    // More pieces, slower fall, staggered start so confetti lasts much longer
-    const pieces = Array.from({ length: 220 }, (_, i) => ({
+    const pieces = Array.from({ length: 220 }, () => ({
       x:     Math.random() * canvas.width,
-      y:     -20 - Math.random() * canvas.height * 3, // spread start far above so they trickle in over time
+      y:     -20 - Math.random() * canvas.height * 3,
       w:     5 + Math.random() * 9,
       h:     9 + Math.random() * 7,
       r:     Math.random() * Math.PI * 2,
       dr:    (Math.random() - 0.5) * 0.12,
-      dy:    0.8 + Math.random() * 1.8,   // much slower fall
+      dy:    0.8 + Math.random() * 1.8,
       dx:    (Math.random() - 0.5) * 1.4,
       color: COLORS[Math.floor(Math.random() * COLORS.length)],
-      recycled: 0  // how many times it has looped
+      recycled: 0
     }));
 
     let raf;
@@ -414,8 +404,6 @@ function showConfettiPopup(name) {
       let anyVisible = false;
       pieces.forEach(p => {
         p.y += p.dy; p.x += p.dx; p.r += p.dr;
-
-        // Recycle pieces back to top up to 3 times so confetti keeps going
         if (p.y > canvas.height + 20) {
           if (p.recycled < 3) {
             p.recycled++;
@@ -424,9 +412,7 @@ function showConfettiPopup(name) {
             p.dy = 0.8 + Math.random() * 1.8;
           }
         }
-
         if (p.y < canvas.height + 20) anyVisible = true;
-
         ctx.save();
         ctx.translate(p.x, p.y);
         ctx.rotate(p.r);
@@ -443,7 +429,6 @@ function showConfettiPopup(name) {
       active = false;
       cancelAnimationFrame(raf);
       overlay.remove();
-      // Return to step 1
       resetBtn.click();
     }
 
