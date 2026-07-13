@@ -311,18 +311,9 @@ uploadSubmitBtn.addEventListener('click', function() {
   payload.append('filename', filename);
 
   fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: payload, redirect: 'follow' })
-    .then(r => r.text())
-    .then(text => {
-      let success = false;
-      try {
-        const data = JSON.parse(text);
-        success = data.status === 'success';
-      } catch(e) {
-        // Google Apps Script sometimes returns non-JSON after redirect
-        // If the file is landing in Drive, treat as success
-        success = true;
-      }
-      if (success) {
+    .then(r => r.json())
+    .then(data => {
+      if (data.status === 'success') {
         uploadSubmitBtn.innerText = 'Photos Submitted ✓';
         uploadSubmitBtn.className = 'btn btn-success';
         showConfettiPopup(name);
@@ -334,10 +325,9 @@ uploadSubmitBtn.addEventListener('click', function() {
     })
     .catch(err => {
       console.error('Upload error:', err);
-      // If we get a network error but the file likely went through, show success
-      uploadSubmitBtn.innerText = 'Photos Submitted ✓';
-      uploadSubmitBtn.className = 'btn btn-success';
-      showConfettiPopup(name);
+      uploadSubmitBtn.disabled = false;
+      uploadSubmitBtn.innerText = 'Submission failed — try again';
+      uploadSubmitBtn.className = 'btn btn-error';
     });
 });
 
