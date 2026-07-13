@@ -273,51 +273,6 @@ function finishSheet(canvas) {
   cropBtn.disabled = false;
 }
 
-// ── PDF Download ──────────────────────────────────────────────────────────────
-document.getElementById('downloadPdfBtn').addEventListener('click', function() {
-  if (!window._sheetCanvas) return;
-  const btn = this;
-  btn.textContent = 'Generating PDF…';
-  btn.disabled = true;
-
-  setTimeout(() => {
-    try {
-      const { jsPDF } = window.jspdf;
-      if (!jsPDF) throw new Error('jsPDF not loaded');
-      const pdf     = new jsPDF({ orientation: 'portrait', unit: 'in', format: 'letter' });
-      const imgData = window._sheetCanvas.toDataURL('image/jpeg', 1.0);
-      pdf.addImage(imgData, 'JPEG', 0, 0, 8.5, 11);
-
-      // Force download via blob URL
-      const pdfBlob = pdf.output('blob');
-      const url     = URL.createObjectURL(pdfBlob);
-      const a       = document.createElement('a');
-      a.href        = url;
-      a.download    = 'magnets-print.pdf';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 5000);
-
-      btn.innerHTML = `✓ PDF Downloaded — open and print at Actual Size`;
-      btn.style.background = '#1A6B5A';
-      btn.disabled = false;
-    } catch(err) {
-      console.error('PDF error:', err);
-      // Fallback: download as high-quality JPEG if jsPDF fails
-      const a      = document.createElement('a');
-      a.href       = window._sheetCanvas.toDataURL('image/jpeg', 1.0);
-      a.download   = 'magnets-print.jpg';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      btn.textContent = '✓ Downloaded as JPEG (print at 100% / Actual Size)';
-      btn.style.background = '#1A6B5A';
-      btn.disabled = false;
-    }
-  }, 80);
-});
-
 // ── Upload ────────────────────────────────────────────────────────────────────
 uploadSubmitBtn.addEventListener('click', function() {
   if (!window._sheetBase64) return;
@@ -387,12 +342,6 @@ resetBtn.addEventListener('click', function() {
   phoneInput.value = '';
   [nameInput, phoneInput].forEach(el => el.classList.remove('invalid'));
   document.getElementById('formError').style.display = 'none';
-  const pdfBtn = document.getElementById('downloadPdfBtn');
-  if (pdfBtn) {
-    pdfBtn.innerHTML = `<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="18" height="18" style="flex-shrink:0"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg> Download Print-Ready PDF`;
-    pdfBtn.style.background = '';
-    pdfBtn.disabled = false;
-  }
   uploadSubmitBtn.disabled = false;
   uploadSubmitBtn.innerText = 'Submit Photos';
   uploadSubmitBtn.className = 'btn btn-dark';
