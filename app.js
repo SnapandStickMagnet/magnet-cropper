@@ -4,19 +4,19 @@ const AUTH_PASSWORD = new URLSearchParams(window.location.search).get('pwd') || 
 const TOTAL_SLOTS = 12;
 
 // ── Sheet geometry ────────────────────────────────────────────────────────────
-// Magnet = 50×50mm. Press needs ~2mm bleed on each side so image wraps cleanly.
-// Print cell = 54×54mm (50mm + 2mm bleed each side) at 300 DPI.
-// 54mm × (300 / 25.4) = 637.8 → 638px per cell.
-// Cut/border line is drawn at the 50mm mark (inside the bleed area).
+// Magnet face = 50×50mm. Press needs 3mm bleed each side to fold under the shell.
+// Print cell = 56×56mm (50mm + 3mm bleed each side) at 300 DPI.
+// 56mm × (300 / 25.4) = 661.4 → 661px per cell.
+// Cut guide border is drawn at the 50mm boundary (inset 3mm from cell edge).
 // Sheet = 8.5×11" = 2550×3300 px. 3 cols × 4 rows.
 // Gap between cells = 6mm = 71px.
 const DPI         = 300;
-const MM_TO_PX    = DPI / 25.4;                    // 11.811 px per mm
-const BLEED_MM    = 2;                              // 2mm bleed each side
-const MAGNET_MM   = 50;                             // actual magnet face
-const CELL_MM     = MAGNET_MM + BLEED_MM * 2;       // 54mm print cell
-const CELL        = Math.round(CELL_MM * MM_TO_PX); // 638px
-const BLEED       = Math.round(BLEED_MM * MM_TO_PX); // 24px — bleed offset
+const MM_TO_PX    = DPI / 25.4;                     // 11.811 px per mm
+const BLEED_MM    = 3;                               // 3mm bleed each side
+const MAGNET_MM   = 50;                              // actual magnet face
+const CELL_MM     = MAGNET_MM + BLEED_MM * 2;        // 56mm print cell
+const CELL        = Math.round(CELL_MM * MM_TO_PX);  // 661px
+const BLEED       = Math.round(BLEED_MM * MM_TO_PX); // 35px bleed offset
 const MAGNET_PX   = Math.round(MAGNET_MM * MM_TO_PX); // 591px — 50mm face
 const COLS        = 3;
 const ROWS        = 4;
@@ -27,9 +27,9 @@ const CONTENT_W   = COLS * CELL + (COLS - 1) * GAP;
 const CONTENT_H   = ROWS * CELL + (ROWS - 1) * GAP;
 const ORIGIN_X    = Math.round((SHEET_W - CONTENT_W) / 2);
 const ORIGIN_Y    = Math.round((SHEET_H - CONTENT_H) / 2);
-const CORNER_R    = Math.round(3 * MM_TO_PX);  // 3mm corner radius
-const BORDER_W    = 4;
-const BORDER_COLOR = '#444444';
+const CORNER_R    = Math.round(1.5 * MM_TO_PX); // very subtle corner radius — square press
+const BORDER_W    = 3;
+const BORDER_COLOR = '#888888';
 
 // Tick marks: short lines extending outside each cell corner into the gap
 const TICK_LEN  = Math.round(2.5 * MM_TO_PX); // 2.5mm tick length
@@ -225,25 +225,22 @@ function drawCutTicks(ctx, x, y) {
   ctx.restore();
 }
 
-// ── Draw one cell: photo fills full bleed area, cut guide at 50mm boundary ────
+// ── Draw one cell: photo and border are exactly the same size ─────────────────
 function drawCell(ctx, img, x, y) {
   ctx.save();
 
   if (img) {
-    // Photo fills the full 54mm cell (including bleed) — no clipping, full bleed
     ctx.drawImage(img, x, y, CELL, CELL);
     ctx.restore();
     ctx.save();
   }
 
-  // Cut guide border drawn at the 50mm magnet boundary (inset by BLEED px)
-  // This is the line you cut along — inside the bleed area
-  const bx = x + BLEED;
-  const by = y + BLEED;
-  roundedRect(ctx, bx, by, MAGNET_PX, MAGNET_PX, CORNER_R);
+  // Border drawn at the exact same boundary as the photo edge
+  // Cut along this line — the photo extends 3mm beyond on all sides for press bleed
+  roundedRect(ctx, x, y, CELL, CELL, CORNER_R);
   ctx.strokeStyle = BORDER_COLOR;
   ctx.lineWidth   = BORDER_W;
-  ctx.setLineDash([]);
+  ctx.setLineDash([10, 6]);
   ctx.stroke();
 
   ctx.restore();
