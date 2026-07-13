@@ -9,6 +9,9 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
 
+  <!-- jsPDF for exact-size PDF generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
   <style>
     /* ── Tokens ── */
     :root {
@@ -590,6 +593,18 @@
       margin-top: 8px;
     }
 
+    .btn-pdf {
+      background: #1a4fa3;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      font-weight: 600;
+    }
+    .btn-pdf:hover { background: #163d82; }
+
     /* ── Contact form (step 4) ── */
     .contact-form {
       width: 100%;
@@ -730,12 +745,18 @@
               </svg>
             </div>
             <h2 class="success-title">Photos ready!</h2>
-            <p style="font-size:13px;color:var(--ink-dim);text-align:center;margin-bottom:20px;">Fill in your details below to submit.</p>
+            <p style="font-size:13px;color:var(--ink-dim);text-align:center;margin-bottom:16px;">Download your print-ready PDF, then fill in your details to submit.</p>
 
-            <div class="contact-form">
+            <button id="downloadPdfBtn" class="btn btn-pdf">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="18" height="18" style="flex-shrink:0">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/>
+              </svg>
+              Download Print-Ready PDF
+            </button>
+
+            <div class="contact-form" style="margin-top:16px;">
               <input type="text" id="nameInput" placeholder="Full name *" autocomplete="name">
               <input type="text" id="phoneInput" placeholder="Email or phone number *" autocomplete="email">
-              <textarea id="notesInput" placeholder="Any notes or special requests (optional)" rows="3"></textarea>
               <p id="formError" style="display:none;color:var(--danger);font-size:13px;font-weight:500;">
                 Please fill in all required fields (marked *).
               </p>

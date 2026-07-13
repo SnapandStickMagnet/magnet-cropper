@@ -31,12 +31,6 @@ const CORNER_R    = Math.round(1.5 * MM_TO_PX); // very subtle corner radius —
 const BORDER_W    = 3;
 const BORDER_COLOR = '#888888';
 
-// Tick marks: short lines extending outside each cell corner into the gap
-const TICK_LEN  = Math.round(2.5 * MM_TO_PX); // 2.5mm tick length
-const TICK_GAP  = Math.round(0.8 * MM_TO_PX); // small gap between photo edge and tick start
-const TICK_W    = 2.5;
-const TICK_COLOR = '#333333';
-
 // ── State ────────────────────────────────────────────────────────────────────
 let slotImages      = new Array(TOTAL_SLOTS).fill(null);
 let activeSlotIndex = null;
@@ -53,8 +47,6 @@ const uploadSubmitBtn  = document.getElementById('uploadSubmitBtn');
 const resetBtn         = document.getElementById('resetBtn');
 const nameInput        = document.getElementById('nameInput');
 const phoneInput       = document.getElementById('phoneInput');
-const emailInput       = document.getElementById('emailInput');
-const notesInput       = document.getElementById('notesInput');
 const sheetGrid        = document.getElementById('sheetGrid');
 const slotCountEl      = document.getElementById('slotCount');
 const cropModalOverlay = document.getElementById('cropModalOverlay');
@@ -156,7 +148,7 @@ cropModalConfirm.addEventListener('click', function() {
     imageSmoothingQuality: 'high',
     fillColor: '#ffffff'
   });
-  slotImages[activeSlotIndex] = canvas.toDataURL('image/jpeg', 0.92).split(',')[1];
+  slotImages[activeSlotIndex] = canvas.toDataURL('image/jpeg', 1.0).split(',')[1];
   closeCropModal();
   buildGrid();
 });
@@ -198,51 +190,25 @@ function roundedRect(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
-// ── Draw corner tick cutting guides outside a cell ───────────────────────────
-// These extend into the gap area so you can see where to cut
-function drawCutTicks(ctx, x, y) {
-  ctx.save();
-  ctx.strokeStyle = TICK_COLOR;
-  ctx.lineWidth   = TICK_W;
-  ctx.setLineDash([]);
-
-  const s = TICK_GAP;           // gap from cell edge to tick start
-  const e = s + TICK_LEN;       // tick end distance from cell edge
-
-  // Top-left
-  ctx.beginPath(); ctx.moveTo(x - e, y); ctx.lineTo(x - s, y); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(x, y - e); ctx.lineTo(x, y - s); ctx.stroke();
-  // Top-right
-  ctx.beginPath(); ctx.moveTo(x + CELL + s, y); ctx.lineTo(x + CELL + e, y); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(x + CELL, y - e); ctx.lineTo(x + CELL, y - s); ctx.stroke();
-  // Bottom-left
-  ctx.beginPath(); ctx.moveTo(x - e, y + CELL); ctx.lineTo(x - s, y + CELL); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(x, y + CELL + s); ctx.lineTo(x, y + CELL + e); ctx.stroke();
-  // Bottom-right
-  ctx.beginPath(); ctx.moveTo(x + CELL + s, y + CELL); ctx.lineTo(x + CELL + e, y + CELL); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(x + CELL, y + CELL + s); ctx.lineTo(x + CELL, y + CELL + e); ctx.stroke();
-
-  ctx.restore();
-}
-
-// ── Draw one cell: photo and border are exactly the same size ─────────────────
+// ── Draw one cell: photo fills cell, dashed border on same edge ───────────────
 function drawCell(ctx, img, x, y) {
   ctx.save();
-
+  roundedRect(ctx, x, y, CELL, CELL, CORNER_R);
+  ctx.clip();
   if (img) {
-    ctx.drawImage(img, x, y, CELL, CELL);
-    ctx.restore();
-    ctx.save();
+    ctx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, x, y, CELL, CELL);
+  } else {
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(x, y, CELL, CELL);
   }
+  ctx.restore();
 
-  // Border drawn at the exact same boundary as the photo edge
-  // Cut along this line — the photo extends 3mm beyond on all sides for press bleed
+  ctx.save();
   roundedRect(ctx, x, y, CELL, CELL, CORNER_R);
   ctx.strokeStyle = BORDER_COLOR;
   ctx.lineWidth   = BORDER_W;
-  ctx.setLineDash([10, 6]);
+  ctx.setLineDash([14, 8]);
   ctx.stroke();
-
   ctx.restore();
 }
 
@@ -297,7 +263,8 @@ cropBtn.addEventListener('click', function() {
 });
 
 function finishSheet(canvas) {
-  window._sheetBase64 = canvas.toDataURL('image/jpeg', 0.95).split(',')[1];
+  window._sheetCanvas  = canvas;
+  window._sheetBase64  = canvas.toDataURL('image/jpeg', 1.0).split(',')[1];
   sheetScreen.classList.add('hidden');
   sheetScreen.style.display = '';
   successScreen.classList.remove('hidden');
@@ -305,6 +272,37 @@ function finishSheet(canvas) {
   cropBtn.classList.add('hidden');
   cropBtn.disabled = false;
 }
+
+// ── PDF Download ──────────────────────────────────────────────────────────────
+document.getElementById('downloadPdfBtn').addEventListener('click', function() {
+  if (!window._sheetCanvas) return;
+  const btn = this;
+  btn.textContent = 'Generating PDF…';
+  btn.disabled = true;
+
+  setTimeout(() => {
+    try {
+      const { jsPDF } = window.jspdf;
+      // Letter page, portrait, inches
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'in', format: 'letter' });
+      // Add image at exact 8.5×11" — zero margin, no scaling
+      const imgData = window._sheetCanvas.toDataURL('image/jpeg', 1.0);
+      pdf.addImage(imgData, 'JPEG', 0, 0, 8.5, 11);
+      pdf.save('magnets-print.pdf');
+      btn.innerHTML = `<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="18" height="18" style="flex-shrink:0"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg> PDF Downloaded!`;
+      btn.style.background = '#1A6B5A';
+      setTimeout(() => {
+        btn.innerHTML = `<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="18" height="18" style="flex-shrink:0"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg> Download Print-Ready PDF`;
+        btn.style.background = '';
+        btn.disabled = false;
+      }, 3000);
+    } catch(err) {
+      console.error('PDF error:', err);
+      btn.textContent = 'PDF failed — try again';
+      btn.disabled = false;
+    }
+  }, 50); // small delay so browser renders the "Generating…" state first
+});
 
 // ── Upload ────────────────────────────────────────────────────────────────────
 uploadSubmitBtn.addEventListener('click', function() {
@@ -341,7 +339,6 @@ uploadSubmitBtn.addEventListener('click', function() {
   payload.append('pwd',      AUTH_PASSWORD);
   payload.append('name',     name);
   payload.append('contact',  contact);
-  payload.append('notes',    notesInput.value.trim());
   payload.append('filename', filename);
 
   fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: payload, redirect: 'follow' })
@@ -368,14 +365,20 @@ uploadSubmitBtn.addEventListener('click', function() {
 // ── Reset ─────────────────────────────────────────────────────────────────────
 resetBtn.addEventListener('click', function() {
   slotImages = new Array(TOTAL_SLOTS).fill(null);
-  window._sheetBase64 = null;
+  window._sheetBase64  = null;
+  window._sheetCanvas  = null;
   activeSlotIndex = null;
   imageInput.value = '';
   nameInput.value = '';
   phoneInput.value = '';
-  notesInput.value = '';
   [nameInput, phoneInput].forEach(el => el.classList.remove('invalid'));
   document.getElementById('formError').style.display = 'none';
+  const pdfBtn = document.getElementById('downloadPdfBtn');
+  if (pdfBtn) {
+    pdfBtn.innerHTML = `<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="18" height="18" style="flex-shrink:0"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg> Download Print-Ready PDF`;
+    pdfBtn.style.background = '';
+    pdfBtn.disabled = false;
+  }
   uploadSubmitBtn.disabled = false;
   uploadSubmitBtn.innerText = 'Submit Photos';
   uploadSubmitBtn.className = 'btn btn-dark';
