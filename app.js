@@ -421,7 +421,7 @@ function showConfettiPopup(name) {
         width:100%;padding:14px;border:none;border-radius:10px;
         background:#1A6B5A;color:#fff;font-size:16px;font-weight:600;
         cursor:pointer;position:relative;z-index:1;
-      ">Awesome, thanks! 🧲</button>
+      ">Thank you for your order!</button>
     </div>
   `;
 
@@ -436,17 +436,20 @@ function showConfettiPopup(name) {
     canvas.height = box.offsetHeight;
     const ctx = canvas.getContext('2d');
 
-    const COLORS = ['#1A6B5A','#F7C948','#E05C5C','#4A90D9','#9B59B6','#2ECC71','#F39C12','#ffffff'];
-    const pieces = Array.from({ length: 100 }, () => ({
-      x:  Math.random() * canvas.width,
-      y:  -20 - Math.random() * canvas.height * 0.6,
-      w:  6 + Math.random() * 8,
-      h:  10 + Math.random() * 6,
-      r:  Math.random() * Math.PI * 2,
-      dr: (Math.random() - 0.5) * 0.15,
-      dy: 2 + Math.random() * 4,
-      dx: (Math.random() - 0.5) * 2,
-      color: COLORS[Math.floor(Math.random() * COLORS.length)]
+    const COLORS = ['#1A6B5A','#F7C948','#E05C5C','#4A90D9','#9B59B6','#2ECC71','#F39C12','#ffffff','#FF69B4','#00CED1'];
+
+    // More pieces, slower fall, staggered start so confetti lasts much longer
+    const pieces = Array.from({ length: 220 }, (_, i) => ({
+      x:     Math.random() * canvas.width,
+      y:     -20 - Math.random() * canvas.height * 3, // spread start far above so they trickle in over time
+      w:     5 + Math.random() * 9,
+      h:     9 + Math.random() * 7,
+      r:     Math.random() * Math.PI * 2,
+      dr:    (Math.random() - 0.5) * 0.12,
+      dy:    0.8 + Math.random() * 1.8,   // much slower fall
+      dx:    (Math.random() - 0.5) * 1.4,
+      color: COLORS[Math.floor(Math.random() * COLORS.length)],
+      recycled: 0  // how many times it has looped
     }));
 
     let raf;
@@ -457,7 +460,19 @@ function showConfettiPopup(name) {
       let anyVisible = false;
       pieces.forEach(p => {
         p.y += p.dy; p.x += p.dx; p.r += p.dr;
+
+        // Recycle pieces back to top up to 3 times so confetti keeps going
+        if (p.y > canvas.height + 20) {
+          if (p.recycled < 3) {
+            p.recycled++;
+            p.y = -20 - Math.random() * 40;
+            p.x = Math.random() * canvas.width;
+            p.dy = 0.8 + Math.random() * 1.8;
+          }
+        }
+
         if (p.y < canvas.height + 20) anyVisible = true;
+
         ctx.save();
         ctx.translate(p.x, p.y);
         ctx.rotate(p.r);
