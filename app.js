@@ -6,7 +6,7 @@ const TOTAL_SLOTS = 12;
 // ── Sheet geometry ────────────────────────────────────────────────────────────
 const DPI         = 300;
 const MM_TO_PX    = DPI / 25.4;
-const BLEED_MM    = 3;
+const BLEED_MM    = 6;   // increased from 3mm → 6mm for better mylar seal overlap
 const MAGNET_MM   = 50;
 const CELL_MM     = MAGNET_MM + BLEED_MM * 2;
 const CELL        = Math.round(CELL_MM * MM_TO_PX);
