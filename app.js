@@ -131,16 +131,59 @@ function openCropModal(src, slotIndex) {
   });
 }
 
+// ── Image enhancement ─────────────────────────────────────────────────────────
+// Applies brightness (+8%), contrast (+10%), and a light unsharp mask to
+// compensate for ink darkening and improve sharpness on Brother inkjet printers.
+function enhanceCanvas(src) {
+  const w = src.width, h = src.height;
+  const dst = document.createElement('canvas');
+  dst.width = w; dst.height = h;
+  const ctx = dst.getContext('2d');
+
+  // ── Step 1: Brightness & Contrast ──
+  // CSS filter is hardware-accelerated and clean for this purpose.
+  // brightness(1.08) = +8%, contrast(1.10) = +10%
+  ctx.filter = 'brightness(1.08) contrast(1.10)';
+  ctx.drawImage(src, 0, 0);
+  ctx.filter = 'none';
+
+  // ── Step 2: Unsharp mask (sharpen) ──
+  // We draw a slightly blurred copy, then blend it with the original
+  // using the classic unsharp mask formula: sharp = original + amount*(original - blurred)
+  const amount = 0.4; // conservative — noticeable but won't over-sharpen faces
+  const blurCtx = document.createElement('canvas');
+  blurCtx.width = w; blurCtx.height = h;
+  const bCtx = blurCtx.getContext('2d');
+  bCtx.filter = 'blur(1px)';
+  bCtx.drawImage(dst, 0, 0);
+  bCtx.filter = 'none';
+
+  const sharp  = ctx.getImageData(0, 0, w, h);
+  const blurred = bCtx.getImageData(0, 0, w, h);
+  const out = ctx.createImageData(w, h);
+  for (let i = 0; i < sharp.data.length; i += 4) {
+    for (let c = 0; c < 3; c++) {
+      const s = sharp.data[i + c];
+      const b = blurred.data[i + c];
+      out.data[i + c] = Math.min(255, Math.max(0, Math.round(s + amount * (s - b))));
+    }
+    out.data[i + 3] = 255; // alpha
+  }
+  ctx.putImageData(out, 0, 0);
+  return dst;
+}
+
 cropModalConfirm.addEventListener('click', function() {
   if (!modalCropper) return;
-  const canvas = modalCropper.getCroppedCanvas({
+  const raw = modalCropper.getCroppedCanvas({
     width: CELL,
     height: CELL,
     imageSmoothingEnabled: true,
     imageSmoothingQuality: 'high',
     fillColor: '#ffffff'
   });
-  slotImages[activeSlotIndex] = canvas.toDataURL('image/jpeg', 0.92).split(',')[1];
+  const enhanced = enhanceCanvas(raw);
+  slotImages[activeSlotIndex] = enhanced.toDataURL('image/jpeg', 0.92).split(',')[1];
   closeCropModal();
   buildGrid();
 });
