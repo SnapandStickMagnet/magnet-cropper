@@ -143,14 +143,14 @@ function enhanceCanvas(src) {
   // ── Step 1: Brightness & Contrast ──
   // CSS filter is hardware-accelerated and clean for this purpose.
   // brightness(1.08) = +8%, contrast(1.10) = +10%
-  ctx.filter = 'brightness(1.12) contrast(1.05)';
+  ctx.filter = 'brightness(1.18) contrast(1.05) saturate(1.20)';
   ctx.drawImage(src, 0, 0);
   ctx.filter = 'none';
 
   // ── Step 2: Unsharp mask (sharpen) ──
   // We draw a slightly blurred copy, then blend it with the original
   // using the classic unsharp mask formula: sharp = original + amount*(original - blurred)
-  const amount = 0.3; // softened — reduces shadow emphasis around facial features
+  const amount = 0.45; // increased for more perceived sharpness and detail
   const blurCtx = document.createElement('canvas');
   blurCtx.width = w; blurCtx.height = h;
   const bCtx = blurCtx.getContext('2d');
