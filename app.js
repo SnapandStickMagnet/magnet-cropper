@@ -230,7 +230,9 @@ function drawCell(ctx, img, x, y) {
   roundedRect(ctx, x, y, CELL, CELL, CORNER_R);
   ctx.clip();
   if (img) {
+    ctx.filter = 'brightness(1.18) contrast(1.05) saturate(1.20)';
     ctx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, x, y, CELL, CELL);
+    ctx.filter = 'none';
   } else {
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(x, y, CELL, CELL);
