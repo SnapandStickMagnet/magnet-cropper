@@ -146,7 +146,7 @@ function enhanceCanvas(src) {
 
   const brightness = 1.25;  // +25% — compensates for inkjet ink darkening
   const contrast   = 1.05;  // +5%  — gentle pop without muddying faces
-  const saturation = 1.30;  // +30% — makes colors vibrant and punchy
+  const saturation = 1.15;  // pulled back from 1.30 — was pushing skin tones red
 
   for (let i = 0; i < d.length; i += 4) {
     let r = d[i], g = d[i+1], b = d[i+2];
