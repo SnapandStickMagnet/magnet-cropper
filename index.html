@@ -493,6 +493,16 @@
       border-radius: var(--radius-sm);
       overflow: hidden;
     }
+    .crop-modal-tip {
+      font-size: 12px;
+      color: var(--ink-mid);
+      background: var(--accent-light);
+      border: 1px solid rgba(26,107,90,0.18);
+      border-radius: var(--radius-sm);
+      padding: 9px 12px;
+      text-align: center;
+      line-height: 1.5;
+    }
     .crop-modal-actions { display: flex; gap: 10px; }
     .crop-modal-actions .btn { flex: 1; }
 
@@ -821,6 +831,7 @@
   <div class="crop-modal-overlay" id="cropModalOverlay">
     <div class="crop-modal">
       <p class="crop-modal-title">Crop photo</p>
+      <p class="crop-modal-tip">✂️ Only what's inside the bright box will appear on your magnet — drag and pinch to get it just right!</p>
       <div class="crop-modal-frame">
         <img id="cropModalImg">
       </div>
