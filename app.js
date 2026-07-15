@@ -132,42 +132,64 @@ function openCropModal(src, slotIndex) {
 }
 
 // ── Image enhancement ─────────────────────────────────────────────────────────
-// Applies brightness (+8%), contrast (+10%), and a light unsharp mask to
-// compensate for ink darkening and improve sharpness on Brother inkjet printers.
+// Applies brightness, saturation, contrast and sharpening at the pixel level
+// so it works reliably regardless of browser canvas filter support.
 function enhanceCanvas(src) {
   const w = src.width, h = src.height;
   const dst = document.createElement('canvas');
   dst.width = w; dst.height = h;
   const ctx = dst.getContext('2d');
-
-  // ── Step 1: Brightness & Contrast ──
-  // CSS filter is hardware-accelerated and clean for this purpose.
-  // brightness(1.08) = +8%, contrast(1.10) = +10%
-  ctx.filter = 'brightness(1.18) contrast(1.05) saturate(1.20)';
   ctx.drawImage(src, 0, 0);
-  ctx.filter = 'none';
 
-  // ── Step 2: Unsharp mask (sharpen) ──
-  // We draw a slightly blurred copy, then blend it with the original
-  // using the classic unsharp mask formula: sharp = original + amount*(original - blurred)
-  const amount = 0.45; // increased for more perceived sharpness and detail
-  const blurCtx = document.createElement('canvas');
-  blurCtx.width = w; blurCtx.height = h;
-  const bCtx = blurCtx.getContext('2d');
+  const imageData = ctx.getImageData(0, 0, w, h);
+  const d = imageData.data;
+
+  const brightness = 1.25;  // +25% — compensates for inkjet ink darkening
+  const contrast   = 1.05;  // +5%  — gentle pop without muddying faces
+  const saturation = 1.30;  // +30% — makes colors vibrant and punchy
+
+  for (let i = 0; i < d.length; i += 4) {
+    let r = d[i], g = d[i+1], b = d[i+2];
+
+    // Brightness
+    r *= brightness; g *= brightness; b *= brightness;
+
+    // Contrast (pivot around 128)
+    r = (r - 128) * contrast + 128;
+    g = (g - 128) * contrast + 128;
+    b = (b - 128) * contrast + 128;
+
+    // Saturation via luminance
+    const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+    r = lum + (r - lum) * saturation;
+    g = lum + (g - lum) * saturation;
+    b = lum + (b - lum) * saturation;
+
+    d[i]   = Math.min(255, Math.max(0, r));
+    d[i+1] = Math.min(255, Math.max(0, g));
+    d[i+2] = Math.min(255, Math.max(0, b));
+  }
+  ctx.putImageData(imageData, 0, 0);
+
+  // ── Unsharp mask (sharpen) ──
+  const amount = 0.55;
+  const blurCanvas = document.createElement('canvas');
+  blurCanvas.width = w; blurCanvas.height = h;
+  const bCtx = blurCanvas.getContext('2d');
   bCtx.filter = 'blur(1px)';
   bCtx.drawImage(dst, 0, 0);
   bCtx.filter = 'none';
 
-  const sharp  = ctx.getImageData(0, 0, w, h);
+  const sharp   = ctx.getImageData(0, 0, w, h);
   const blurred = bCtx.getImageData(0, 0, w, h);
-  const out = ctx.createImageData(w, h);
+  const out     = ctx.createImageData(w, h);
   for (let i = 0; i < sharp.data.length; i += 4) {
     for (let c = 0; c < 3; c++) {
       const s = sharp.data[i + c];
-      const b = blurred.data[i + c];
-      out.data[i + c] = Math.min(255, Math.max(0, Math.round(s + amount * (s - b))));
+      const bl = blurred.data[i + c];
+      out.data[i + c] = Math.min(255, Math.max(0, Math.round(s + amount * (s - bl))));
     }
-    out.data[i + 3] = 255; // alpha
+    out.data[i + 3] = 255;
   }
   ctx.putImageData(out, 0, 0);
   return dst;
@@ -230,9 +252,7 @@ function drawCell(ctx, img, x, y) {
   roundedRect(ctx, x, y, CELL, CELL, CORNER_R);
   ctx.clip();
   if (img) {
-    ctx.filter = 'brightness(1.18) contrast(1.05) saturate(1.20)';
     ctx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, x, y, CELL, CELL);
-    ctx.filter = 'none';
   } else {
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(x, y, CELL, CELL);
