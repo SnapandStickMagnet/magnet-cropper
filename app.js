@@ -118,8 +118,7 @@ function buildGrid() {
         if (!isOpen) slot.classList.add('show-overlay');
       });
     } else {
-      slot.addEventListener('click', e => {
-        e.stopPropagation();
+      slot.addEventListener('click', () => {
         openSlotPickerMulti(i);
       });
     }
@@ -165,7 +164,9 @@ document.addEventListener('click', dismissOverlays);
 // Two separate inputs: toggling `multiple` on a reused input is unreliable on mobile
 const slotFileInput = document.createElement('input');
 slotFileInput.type = 'file';
-slotFileInput.accept = 'image/*';
+// No `accept` here: on iOS, accept="image/*" forces the native photo picker
+// which only allows single selection. Without accept, the Files picker opens
+// and allows true multi-select.
 slotFileInput.multiple = true;
 slotFileInput.style.display = 'none';
 document.body.appendChild(slotFileInput);
