@@ -364,16 +364,24 @@ function closeCropModal(cancelQueue = false) {
 
 // ── First upload ──────────────────────────────────────────────────────────────
 imageInput.addEventListener('change', function(e) {
-  const file = e.target.files[0];
-  if (!file) return;
+  const files = Array.from(e.target.files);
+  if (!files.length) return;
+
   uploadScreen.classList.add('hidden');
   cropBtn.classList.add('hidden');
   sheetScreen.classList.remove('hidden');
   sheetScreen.style.display = 'flex';
   buildGrid();
+
+  // Queue any extra files starting at slot 1, then open slot 0 first
+  if (files.length > 1) {
+    pendingFiles = files.slice(1);
+    pendingStartIdx = 1;
+  }
+
   const reader = new FileReader();
   reader.onload = ev => openCropModal(ev.target.result, 0);
-  reader.readAsDataURL(file);
+  reader.readAsDataURL(files[0]);
 });
 
 // ── Draw helpers ──────────────────────────────────────────────────────────────
