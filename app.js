@@ -27,6 +27,8 @@ const BORDER_COLOR = '#888888';
 let slotImages      = new Array(TOTAL_SLOTS).fill(null);
 let activeSlotIndex = null;
 let modalCropper    = null;
+let pendingFiles    = [];   // queue of File objects waiting to be cropped
+let pendingStartIdx = null; // slot index where the queue starts filling
 
 // ── DOM refs ─────────────────────────────────────────────────────────────────
 const uploadScreen     = document.getElementById('uploadScreen');
@@ -99,21 +101,53 @@ function buildGrid() {
 const slotFileInput = document.createElement('input');
 slotFileInput.type = 'file';
 slotFileInput.accept = 'image/*';
+slotFileInput.multiple = true;
 slotFileInput.style.display = 'none';
 document.body.appendChild(slotFileInput);
 
 function openSlotPicker(index) {
   activeSlotIndex = index;
+  pendingStartIdx = index;
   slotFileInput.value = '';
   slotFileInput.click();
 }
 
-slotFileInput.addEventListener('change', function(e) {
-  const file = e.target.files[0];
-  if (!file || activeSlotIndex === null) return;
+// Find the next empty slot at or after `startIdx`
+function nextEmptySlot(startIdx) {
+  for (let i = startIdx; i < TOTAL_SLOTS; i++) {
+    if (!slotImages[i]) return i;
+  }
+  return null;
+}
+
+// Process the next file in the pending queue
+function processNextPending() {
+  if (pendingFiles.length === 0) return;
+
+  // Find the next open slot
+  const slot = nextEmptySlot(pendingStartIdx);
+  if (slot === null) {
+    // No more empty slots — discard remaining
+    pendingFiles = [];
+    return;
+  }
+
+  const file = pendingFiles.shift();
+  activeSlotIndex = slot;
+  pendingStartIdx = slot + 1;
+
   const reader = new FileReader();
   reader.onload = ev => openCropModal(ev.target.result, activeSlotIndex);
   reader.readAsDataURL(file);
+}
+
+slotFileInput.addEventListener('change', function(e) {
+  const files = Array.from(e.target.files);
+  if (!files.length || activeSlotIndex === null) return;
+
+  pendingFiles = files;
+  pendingStartIdx = activeSlotIndex;
+  processNextPending();
 });
 
 // ── Crop modal ────────────────────────────────────────────────────────────────
@@ -121,6 +155,17 @@ function openCropModal(src, slotIndex) {
   cropModalImg.src = src;
   cropModalOverlay.classList.add('active');
   activeSlotIndex = slotIndex;
+
+  // Update title to show batch progress if more photos are queued
+  const titleEl = document.querySelector('.crop-modal-title');
+  if (titleEl) {
+    if (pendingFiles.length > 0) {
+      titleEl.textContent = `Crop photo — ${pendingFiles.length} more after this`;
+    } else {
+      titleEl.textContent = 'Crop photo';
+    }
+  }
+
   if (modalCropper) modalCropper.destroy();
   modalCropper = new Cropper(cropModalImg, {
     aspectRatio: 1,
@@ -208,14 +253,20 @@ cropModalConfirm.addEventListener('click', function() {
   slotImages[activeSlotIndex] = enhanced.toDataURL('image/jpeg', 0.92).split(',')[1];
   closeCropModal();
   buildGrid();
+
+  // If more files are queued, open the next one automatically
+  if (pendingFiles.length > 0) {
+    processNextPending();
+  }
 });
 
-cropModalCancel.addEventListener('click', closeCropModal);
+cropModalCancel.addEventListener('click', () => closeCropModal(true));
 
-function closeCropModal() {
+function closeCropModal(cancelQueue = false) {
   cropModalOverlay.classList.remove('active');
   if (modalCropper) { modalCropper.destroy(); modalCropper = null; }
   cropModalImg.src = '';
+  if (cancelQueue) pendingFiles = [];
 }
 
 // ── First upload ──────────────────────────────────────────────────────────────
