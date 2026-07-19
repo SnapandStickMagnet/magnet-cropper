@@ -65,15 +65,8 @@ function buildGrid() {
     numEl.className = 'slot-num';
     numEl.textContent = i + 1;
 
-    const removeBtn = document.createElement('button');
-    removeBtn.className = 'slot-remove';
-    removeBtn.innerHTML = '×';
-    removeBtn.addEventListener('click', e => {
-      e.stopPropagation();
-      slotImages[i] = null;
-      slotOriginals[i] = null;
-      buildGrid();
-    });
+    slot.appendChild(plusEl);
+    slot.appendChild(numEl);
 
     if (img) {
       const imgEl = document.createElement('img');
@@ -83,48 +76,68 @@ function buildGrid() {
       // Action overlay for filled slots
       const overlay = document.createElement('div');
       overlay.className = 'slot-overlay';
+      overlay.addEventListener('click', e => e.stopPropagation());
 
       const recropBtn = document.createElement('button');
       recropBtn.className = 'slot-action-btn';
       recropBtn.textContent = '✂️ Re-crop';
-      recropBtn.addEventListener('click', e => {
-        e.stopPropagation();
-        slot.classList.remove('show-overlay');
-        if (slotOriginals[i]) {
-          openCropModal(slotOriginals[i], i);
-        } else {
-          openSlotPicker(i);
-        }
+      recropBtn.addEventListener('click', () => {
+        dismissOverlays();
+        openCropModal(slotOriginals[i], i);
       });
 
       const replaceBtn = document.createElement('button');
       replaceBtn.className = 'slot-action-btn';
       replaceBtn.textContent = '🔄 Replace';
-      replaceBtn.addEventListener('click', e => {
-        e.stopPropagation();
-        slot.classList.remove('show-overlay');
-        openSlotPicker(i);
+      replaceBtn.addEventListener('click', () => {
+        dismissOverlays();
+        // Clear the original so the replacement is treated as fresh
+        slotOriginals[i] = null;
+        openSlotPickerForSlot(i);
+      });
+
+      const removeOverlayBtn = document.createElement('button');
+      removeOverlayBtn.className = 'slot-action-btn slot-action-btn--danger';
+      removeOverlayBtn.textContent = '🗑 Remove';
+      removeOverlayBtn.addEventListener('click', () => {
+        dismissOverlays();
+        slotImages[i] = null;
+        slotOriginals[i] = null;
+        buildGrid();
       });
 
       overlay.appendChild(recropBtn);
       overlay.appendChild(replaceBtn);
+      overlay.appendChild(removeOverlayBtn);
       slot.appendChild(overlay);
 
-      slot.addEventListener('click', (e) => {
+      slot.addEventListener('click', e => {
         e.stopPropagation();
-        // Dismiss any other open overlays first
-        document.querySelectorAll('.slot.show-overlay').forEach(s => {
-          if (s !== slot) s.classList.remove('show-overlay');
-        });
-        slot.classList.toggle('show-overlay');
+        const isOpen = slot.classList.contains('show-overlay');
+        dismissOverlays();
+        if (!isOpen) slot.classList.add('show-overlay');
       });
     } else {
-      slot.addEventListener('click', () => openSlotPicker(i));
+      slot.addEventListener('click', e => {
+        e.stopPropagation();
+        openSlotPickerMulti(i);
+      });
     }
 
-    slot.appendChild(plusEl);
-    slot.appendChild(numEl);
-    slot.appendChild(removeBtn);
+    // Keep the × remove button but only on filled slots
+    if (img) {
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'slot-remove';
+      removeBtn.innerHTML = '×';
+      removeBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        slotImages[i] = null;
+        slotOriginals[i] = null;
+        buildGrid();
+      });
+      slot.appendChild(removeBtn);
+    }
+
     sheetGrid.appendChild(slot);
   });
 
@@ -140,10 +153,12 @@ function buildGrid() {
   }
 }
 
-// Dismiss any open slot overlay when clicking outside the grid
-document.addEventListener('click', () => {
+function dismissOverlays() {
   document.querySelectorAll('.slot.show-overlay').forEach(s => s.classList.remove('show-overlay'));
-});
+}
+
+// Dismiss overlays when clicking outside the grid
+document.addEventListener('click', dismissOverlays);
 
 // ── Slot picker ───────────────────────────────────────────────────────────────
 const slotFileInput = document.createElement('input');
@@ -153,9 +168,20 @@ slotFileInput.multiple = true;
 slotFileInput.style.display = 'none';
 document.body.appendChild(slotFileInput);
 
-function openSlotPicker(index) {
+// For Replace: always writes to the exact slot, single file only
+function openSlotPickerForSlot(index) {
   activeSlotIndex = index;
-  pendingStartIdx = index;
+  pendingStartIdx = null; // null = replace mode
+  slotFileInput.multiple = false;
+  slotFileInput.value = '';
+  slotFileInput.click();
+}
+
+// For empty slot taps: allow multi-select, fills from this slot forward
+function openSlotPickerMulti(index) {
+  activeSlotIndex = index;
+  pendingStartIdx = index; // non-null = multi-fill mode
+  slotFileInput.multiple = true;
   slotFileInput.value = '';
   slotFileInput.click();
 }
@@ -191,11 +217,18 @@ function processNextPending() {
 
 slotFileInput.addEventListener('change', function(e) {
   const files = Array.from(e.target.files);
-  if (!files.length || activeSlotIndex === null) return;
+  if (!files.length) return;
 
-  pendingFiles = files;
-  pendingStartIdx = activeSlotIndex;
-  processNextPending();
+  if (pendingStartIdx === null) {
+    // Replace mode: single file → exact slot
+    const reader = new FileReader();
+    reader.onload = ev => openCropModal(ev.target.result, activeSlotIndex);
+    reader.readAsDataURL(files[0]);
+  } else {
+    // Multi-fill mode: queue all files, fill empty slots in order
+    pendingFiles = files;
+    processNextPending();
+  }
 });
 
 // ── Crop modal ────────────────────────────────────────────────────────────────
