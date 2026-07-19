@@ -161,6 +161,8 @@ function dismissOverlays() {
 document.addEventListener('click', dismissOverlays);
 
 // ── Slot picker ───────────────────────────────────────────────────────────────
+
+// Two separate inputs: toggling `multiple` on a reused input is unreliable on mobile
 const slotFileInput = document.createElement('input');
 slotFileInput.type = 'file';
 slotFileInput.accept = 'image/*';
@@ -168,20 +170,24 @@ slotFileInput.multiple = true;
 slotFileInput.style.display = 'none';
 document.body.appendChild(slotFileInput);
 
+const slotFileInputSingle = document.createElement('input');
+slotFileInputSingle.type = 'file';
+slotFileInputSingle.accept = 'image/*';
+slotFileInputSingle.style.display = 'none';
+document.body.appendChild(slotFileInputSingle);
+
 // For Replace: always writes to the exact slot, single file only
 function openSlotPickerForSlot(index) {
   activeSlotIndex = index;
   pendingStartIdx = null; // null = replace mode
-  slotFileInput.multiple = false;
-  slotFileInput.value = '';
-  slotFileInput.click();
+  slotFileInputSingle.value = '';
+  slotFileInputSingle.click();
 }
 
 // For empty slot taps: allow multi-select, fills from this slot forward
 function openSlotPickerMulti(index) {
   activeSlotIndex = index;
   pendingStartIdx = index; // non-null = multi-fill mode
-  slotFileInput.multiple = true;
   slotFileInput.value = '';
   slotFileInput.click();
 }
@@ -215,20 +221,21 @@ function processNextPending() {
   reader.readAsDataURL(file);
 }
 
+// Multi-select input: queue all files and crop one by one
 slotFileInput.addEventListener('change', function(e) {
   const files = Array.from(e.target.files);
   if (!files.length) return;
+  pendingFiles = files;
+  processNextPending();
+});
 
-  if (pendingStartIdx === null) {
-    // Replace mode: single file → exact slot
-    const reader = new FileReader();
-    reader.onload = ev => openCropModal(ev.target.result, activeSlotIndex);
-    reader.readAsDataURL(files[0]);
-  } else {
-    // Multi-fill mode: queue all files, fill empty slots in order
-    pendingFiles = files;
-    processNextPending();
-  }
+// Single-file input (Replace): crop directly into the exact slot
+slotFileInputSingle.addEventListener('change', function(e) {
+  const files = Array.from(e.target.files);
+  if (!files.length) return;
+  const reader = new FileReader();
+  reader.onload = ev => openCropModal(ev.target.result, activeSlotIndex);
+  reader.readAsDataURL(files[0]);
 });
 
 // ── Crop modal ────────────────────────────────────────────────────────────────
