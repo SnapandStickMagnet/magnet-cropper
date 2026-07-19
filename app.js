@@ -110,7 +110,14 @@ function buildGrid() {
       overlay.appendChild(replaceBtn);
       slot.appendChild(overlay);
 
-      slot.addEventListener('click', () => slot.classList.toggle('show-overlay'));
+      slot.addEventListener('click', (e) => {
+        e.stopPropagation();
+        // Dismiss any other open overlays first
+        document.querySelectorAll('.slot.show-overlay').forEach(s => {
+          if (s !== slot) s.classList.remove('show-overlay');
+        });
+        slot.classList.toggle('show-overlay');
+      });
     } else {
       slot.addEventListener('click', () => openSlotPicker(i));
     }
@@ -194,7 +201,10 @@ slotFileInput.addEventListener('change', function(e) {
 // ── Crop modal ────────────────────────────────────────────────────────────────
 function openCropModal(src, slotIndex) {
   cropModalImg.src = src;
-  slotOriginals[slotIndex] = src;   // remember original for re-crop
+  // Only store as original if we don't already have one (preserve true original across re-crops)
+  if (!slotOriginals[slotIndex]) {
+    slotOriginals[slotIndex] = src;
+  }
   cropModalOverlay.classList.add('active');
   activeSlotIndex = slotIndex;
 
