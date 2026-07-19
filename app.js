@@ -25,6 +25,7 @@ const BORDER_COLOR = '#888888';
 
 // ── State ────────────────────────────────────────────────────────────────────
 let slotImages      = new Array(TOTAL_SLOTS).fill(null);
+let slotOriginals   = new Array(TOTAL_SLOTS).fill(null); // original src before crop
 let activeSlotIndex = null;
 let modalCropper    = null;
 let pendingFiles    = [];   // queue of File objects waiting to be cropped
@@ -70,6 +71,7 @@ function buildGrid() {
     removeBtn.addEventListener('click', e => {
       e.stopPropagation();
       slotImages[i] = null;
+      slotOriginals[i] = null;
       buildGrid();
     });
 
@@ -77,11 +79,45 @@ function buildGrid() {
       const imgEl = document.createElement('img');
       imgEl.src = 'data:image/jpeg;base64,' + img;
       slot.appendChild(imgEl);
+
+      // Action overlay for filled slots
+      const overlay = document.createElement('div');
+      overlay.className = 'slot-overlay';
+
+      const recropBtn = document.createElement('button');
+      recropBtn.className = 'slot-action-btn';
+      recropBtn.textContent = '✂️ Re-crop';
+      recropBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        slot.classList.remove('show-overlay');
+        if (slotOriginals[i]) {
+          openCropModal(slotOriginals[i], i);
+        } else {
+          openSlotPicker(i);
+        }
+      });
+
+      const replaceBtn = document.createElement('button');
+      replaceBtn.className = 'slot-action-btn';
+      replaceBtn.textContent = '🔄 Replace';
+      replaceBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        slot.classList.remove('show-overlay');
+        openSlotPicker(i);
+      });
+
+      overlay.appendChild(recropBtn);
+      overlay.appendChild(replaceBtn);
+      slot.appendChild(overlay);
+
+      slot.addEventListener('click', () => slot.classList.toggle('show-overlay'));
+    } else {
+      slot.addEventListener('click', () => openSlotPicker(i));
     }
+
     slot.appendChild(plusEl);
     slot.appendChild(numEl);
     slot.appendChild(removeBtn);
-    slot.addEventListener('click', () => openSlotPicker(i));
     sheetGrid.appendChild(slot);
   });
 
@@ -96,6 +132,11 @@ function buildGrid() {
     cropBtn.classList.add('hidden');
   }
 }
+
+// Dismiss any open slot overlay when clicking outside the grid
+document.addEventListener('click', () => {
+  document.querySelectorAll('.slot.show-overlay').forEach(s => s.classList.remove('show-overlay'));
+});
 
 // ── Slot picker ───────────────────────────────────────────────────────────────
 const slotFileInput = document.createElement('input');
@@ -153,6 +194,7 @@ slotFileInput.addEventListener('change', function(e) {
 // ── Crop modal ────────────────────────────────────────────────────────────────
 function openCropModal(src, slotIndex) {
   cropModalImg.src = src;
+  slotOriginals[slotIndex] = src;   // remember original for re-crop
   cropModalOverlay.classList.add('active');
   activeSlotIndex = slotIndex;
 
@@ -422,7 +464,8 @@ uploadSubmitBtn.addEventListener('click', function() {
 
 // ── Reset ─────────────────────────────────────────────────────────────────────
 resetBtn.addEventListener('click', function() {
-  slotImages = new Array(TOTAL_SLOTS).fill(null);
+  slotImages    = new Array(TOTAL_SLOTS).fill(null);
+  slotOriginals = new Array(TOTAL_SLOTS).fill(null);
   window._sheetBase64 = null;
   activeSlotIndex = null;
   imageInput.value = '';
